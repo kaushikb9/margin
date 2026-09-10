@@ -128,7 +128,10 @@ change: `TA_MODEL_COMPOSER`, `TA_MODEL_CHECKER`, `TA_MODEL_DEEPER`,
    blocks unsigned add-ons and ignores `xpinstall.signatures.required`.
    AMO rejects a manifest without `data_collection_permissions`; margin
    declares `websiteActivity` (it reads which video you are on and sends
-   your notes to the desk you configured). Bump `version` for each upload.
+   your notes to the desk you configured). Bump `version` for each upload; `strict_min_version` must be ≥142 or AMO warns
+   that `data_collection_permissions` predates the minimum. Icons: `margin.svg`
+   is the source; the PNGs are rendered from it (`qlmanage -t -s 512`, then
+   `sips`) because AMO's icon field wants PNG.
 
 ## After a session
 

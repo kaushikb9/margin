@@ -1,12 +1,12 @@
 {
   "manifest_version": 3,
   "name": "margin",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Sits in the margin of a lecture. Jot as you go; the TA answers and checks under your notes.",
   "browser_specific_settings": {
     "gecko": {
       "id": "margin@kaushikbhat.com",
-      "strict_min_version": "128.0",
+      "strict_min_version": "142.0",
       "data_collection_permissions": {
         "required": [
           "websiteActivity"
@@ -15,8 +15,9 @@
     }
   },
   "icons": {
-    "48": "icons/ta.svg",
-    "96": "icons/ta.svg"
+    "48": "icons/margin-48.png",
+    "96": "icons/margin-96.png",
+    "128": "icons/margin-128.png"
   },
   "permissions": [
     "storage",
@@ -25,7 +26,7 @@
   "sidebar_action": {
     "default_title": "margin",
     "default_panel": "sidebar/panel.html",
-    "default_icon": "icons/ta.svg",
+    "default_icon": "icons/margin.svg",
     "open_at_install": false
   },
   "content_scripts": [
