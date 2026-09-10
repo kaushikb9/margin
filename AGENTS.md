@@ -158,10 +158,13 @@ TA_HOST=https://margin-3d0.pages.dev TA_TOKEN=… npm run brain 7xTGNNLPyMI
 
 One post per video, into `~/Code/brain/site/posts/YYYY-MM-DD-<slug>.html`
 (dated to the first note, found by slug on later runs, never renamed) plus
-its index row between `<!-- margin:<id> -->` markers. Key concepts are KB's
-own statements, corrected in bold where the TA checked them; the thread is
-the margin; the keep block is whatever KB starred. **No stars, no post** —
-the script refuses (exit 3). Widgets are not rendered; a line says one was
+its index row between `<!-- margin:<id> -->` markers. The keep block sits at the top:
+a concise "things to remember" written by the deeper model from KB's
+starred lines and nothing else, cached in `sessions/<video>/summary.json`
+until the stars change (the key comes from the env or `.dev.vars`; without
+one the starred lines are used verbatim and it says so). Below it the raw
+thread, corrections on their gold rail, a ★ on every starred line. Nothing
+is repeated. **No stars, no post** — the script refuses (exit 3). Widgets are not rendered; a line says one was
 built. It reads the live desk only (refuses localhost), then runs the
 brain's own `npm test`. Committing and deploying the brain stay KB's. Not
 nightly: run it by hand until it has produced three posts worth keeping.

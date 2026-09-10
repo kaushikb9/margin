@@ -10,14 +10,20 @@
 // check. Nothing is committed or deployed: that stays KB's.
 //
 // The post follows brain/skills/brain-post.md: plain HTML, no script, one
-// keep block. The keep block is the starred notes and replies; with none,
-// this script refuses — a post with nothing to remember is not finished.
-// Widgets are not rendered: a one-line marker says one was built.
+// keep block. The keep block sits at the top: a concise summary of what KB
+// starred, written by the deeper model from the starred lines and nothing
+// else, cached in sessions/<video>/summary.json until the stars change. With
+// nothing starred this script refuses. Below it, the raw thread, with a ★ on
+// every starred line. Nothing is repeated. Widgets: a one-line marker.
 import { readFileSync, writeFileSync, readdirSync, existsSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { homedir } from 'node:os';
+import { createHash } from 'node:crypto';
+import { mkdirSync } from 'node:fs';
+import { chat } from '../desk/client.js';
+import { modelFor } from '../desk/models.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const BRAIN = process.env.BRAIN_DIR || join(homedir(), 'Code', 'brain');
@@ -71,29 +77,52 @@ for (const n of notes) {
 }
 if (!starred.length) { console.error(`brain: nothing starred on ${videoId} — star at least one note or reply in margin; a post with nothing to remember is not finished`); process.exit(3); }
 
-// ---- key concepts: KB's own statements, corrected where checked ----
-const statements = notes.filter(n => !isQuestion(n.text));
-const keyHtml = statements.map(n => {
-  const c = lastCheck(n);
-  if (c && !n.overruled) return `<li>${esc(n.text)} — <strong>${esc(c.correction.split(/(?<=[.!?])\s/)[0])}</strong></li>`;
-  return `<li>${esc(n.text)}</li>`;
-}).join('\n');
+// ---- things to remember: a concise summary of the stars, cached until they change ----
+const starHash = createHash('sha1').update(starred.map(x => x.text).join('\n')).digest('hex').slice(0, 12);
+const cacheDir = join(root, 'sessions', videoId); mkdirSync(cacheDir, { recursive: true });
+const cachePath = join(cacheDir, 'summary.json');
+let summaryText = null;
+try { const c = JSON.parse(readFileSync(cachePath, 'utf8')); if (c.hash === starHash) summaryText = c.text; } catch { /* none yet */ }
+if (!summaryText) {
+  // The key comes from the environment or margin's .dev.vars, never from a file in the brain.
+  let key = process.env.OPENROUTER_API_KEY;
+  if (!key) try { key = readFileSync(join(root, '.dev.vars'), 'utf8').match(/^OPENROUTER_API_KEY=(.+)$/m)?.[1]?.trim(); } catch { /* absent */ }
+  if (!key || process.env.TA_MOCK === '1') {
+    // No model: the starred lines themselves, first sentence each. Deterministic; used by the tests.
+    summaryText = starred.map(x => x.text.split(/(?<=[.!?])\s/)[0]).join('\n');
+    if (!process.env.TA_MOCK) console.error('brain: no OPENROUTER_API_KEY; the keep block is the starred lines verbatim, not a summary');
+  } else {
+    const env = { OPENROUTER_API_KEY: key, ...process.env };
+    const system = `KB starred these lines while studying a lecture: some are his own notes, some are a teaching assistant's replies. Write "the things to remember" from them: the few ideas that matter, each in one plain sentence, in KB's own voice (first person where the line is his). Use only what the lines say; no new facts, no numbers that are not in the lines. At most 6 sentences, under 120 words, no headings, no bullets, no em dashes. Return ONLY a JSON object: {"text": "<the sentences, separated by newlines>"}`;
+    const user = starred.map((x, i) => `${i + 1}. [${x.who === 'ta' ? 'TA' : 'me'}] ${x.text}`).join('\n\n');
+    const r = await chat({ model: modelFor('deeper', env), system, user, job: 'deeper', env });
+    const m = r.content.match(/"text"\s*:\s*"((?:[^"\\]|\\.)*)"/s);
+    const text = m ? JSON.parse('"' + m[1] + '"').trim() : '';
+    if (!text || text.length > 1200 || /[<>]/.test(text)) { console.error(`brain: the summary came back unusable (${text.length} chars); nothing written`); process.exit(1); }
+    summaryText = text;
+    writeFileSync(cachePath, JSON.stringify({ hash: starHash, text, model: r.model, at: new Date().toISOString() }, null, 1));
+  }
+}
+const keepHtml = summaryText.split(/\n+/).map(l => `  <p>${esc(l.trim())}</p>`).filter(l => l.length > 11).join('\n');
 
 // ---- the margin ----
+const STAR = '<span class="star" title="Starred">★</span> ';
 function replyHtml(r, n) {
+  const st = (n.stars || []).includes(r.id) ? STAR : '';
   if (r.kind === 'you') return `<div class="ta you"><span class="who"><b>Me</b></span><p>${esc(r.text)}</p></div>`;
-  if (r.kind === 'answer' || r.kind === 'deeper') return `<div class="ta"><span class="who"><b>TA</b>${r.title ? ' · ' + esc(r.title) : ''}${r.fromLecture ? ' · from the lecture only' : ''}${cite(r)}</span><p>${esc(r.body)}</p></div>`;
-  if (r.kind === 'check') return `<div class="ta check"><span class="who"><b>TA, on what I wrote</b>${cite(r)}</span><p>${esc(r.correction)}</p>${n.overruled ? '<p class="kept">I kept my version.</p>' : ''}</div>`;
+  if (r.kind === 'answer' || r.kind === 'deeper') return `<div class="ta"><span class="who">${st}<b>TA</b>${r.title ? ' · ' + esc(r.title) : ''}${r.fromLecture ? ' · from the lecture only' : ''}${cite(r)}</span><p>${esc(r.body)}</p></div>`;
+  if (r.kind === 'check') return `<div class="ta check"><span class="who">${st}<b>TA, on what I wrote</b>${cite(r)}</span><p>${esc(r.correction)}</p>${n.overruled ? '<p class="kept">I kept my version.</p>' : ''}</div>`;
   if (r.kind === 'widget') return `<div class="ta"><span class="who"><b>TA</b> built a widget here: ${esc(r.title)}</span></div>`;
   return '';
 }
 const cite = r => (r.cites?.[0] ? ` · <a href="${yt(r.cites[0].t)}">${esc(fmt(r.cites[0].t))}</a>` : '') + (r.model && r.model !== 'mock' ? ` <span class="model">${esc(r.model.replace(/^[^/]+\//, ''))}</span>` : '');
 const threadHtml = notes.map(n => `  <li>
     <span class="at"><a href="${yt(n.t)}">${esc(fmt(n.t))}</a></span>
-    <p class="me">${esc(n.text)}</p>
+    <p class="me">${(n.stars || []).includes('note') ? STAR : ''}${esc(n.text)}</p>
 ${(n.replies || []).map(r => replyHtml(r, n)).filter(Boolean).map(h => '    ' + h).join('\n')}
   </li>`).join('\n');
 
+const statements = notes.filter(n => !isQuestion(n.text));
 const questions = notes.length - statements.length;
 const corrected = statements.filter(n => lastCheck(n) && !n.overruled).length;
 const summary = `${tx ? `${Math.round((tx.segments.at(-1)?.t || 0) / 60)} minutes of lecture. ` : ''}My notes in the margin as I watched, the TA's replies under them${corrected ? `, and ${corrected === 1 ? 'one thing' : corrected + ' things'} I wrote down confidently that ${corrected === 1 ? 'was' : 'were'} wrong` : ''}. ${notes.length} notes, ${questions} of them questions.`;
@@ -118,20 +147,15 @@ const html = `<!doctype html>
   <p class="summary">${esc(summary)}</p>
 </header>
 
-<h2>Key concepts</h2>
-<ul>
-${keyHtml}
-</ul>
+<div class="keep">
+  <span class="eyebrow">Things to remember</span>
+${keepHtml}
+</div>
 
 <h2>In the margin</h2>
 <ul class="thread">
 ${threadHtml}
 </ul>
-
-<div class="keep">
-  <span class="eyebrow">Things to remember</span>
-${starred.map(s => `  <p>${esc(s.text)}${s.who === 'ta' ? ' <span class="who">— TA</span>' : ''}</p>`).join('\n')}
-</div>
 
 <footer><a href="/">← All posts</a></footer>
 
@@ -184,4 +208,4 @@ writeFileSync(indexPath, index);
 // ---- the brain's own check ----
 try { execFileSync('npm', ['test'], { cwd: BRAIN, stdio: 'pipe' }); }
 catch (e) { console.error(`brain: the brain's check failed after writing ${file}:\n${e.stdout?.toString().split('\n').filter(l => /✖|not ok|Error/.test(l)).slice(0, 8).join('\n')}`); process.exit(1); }
-console.log(`brain: ${existing ? 'rewrote' : 'wrote'} site/posts/${file} — ${notes.length} notes, ${starred.length} starred, ${corrected} corrected; index row ${markerRe.test(readFileSync(indexPath, 'utf8')) ? 'in place' : 'added'}; brain check green. Commit and deploy the brain when you are ready.`);
+console.log(`brain: ${existing ? 'rewrote' : 'wrote'} site/posts/${file} — ${notes.length} notes, ${starred.length} starred → ${summaryText.split(/\n+/).length} lines to remember, ${corrected} corrected; index row ${markerRe.test(readFileSync(indexPath, 'utf8')) ? 'in place' : 'added'}; brain check green. Commit and deploy the brain when you are ready.`);
