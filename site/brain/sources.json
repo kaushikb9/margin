@@ -1,0 +1,20 @@
+{
+ "sources": [
+  {
+   "id": "7xTGNNLPyMI",
+   "title": "Deep Dive into LLMs like ChatGPT",
+   "milestone": "d1",
+   "duration": 12679.5,
+   "chapters": 24,
+   "segments": 5761
+  },
+  {
+   "id": "kCc8FmEb1nY",
+   "title": "Let's build GPT: from scratch, in code, spelled out.",
+   "milestone": "d2",
+   "duration": 6978.5,
+   "chapters": 30,
+   "segments": 2955
+  }
+ ]
+}

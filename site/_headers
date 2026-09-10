@@ -1,0 +1,10 @@
+/widget/runtime
+  Content-Security-Policy: default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval'; style-src 'unsafe-inline'; connect-src 'none'; img-src 'none'
+  Cache-Control: public, max-age=300
+/widget/runtime.html
+  Content-Security-Policy: default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval'; style-src 'unsafe-inline'; connect-src 'none'; img-src 'none'
+  Cache-Control: public, max-age=300
+/brain/*
+  Cache-Control: public, max-age=300
+/transcripts/*
+  Cache-Control: public, max-age=86400

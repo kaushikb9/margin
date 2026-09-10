@@ -1,0 +1,7 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    { "name": "desk", "runtimeExecutable": "npx", "runtimeArgs": ["wrangler", "pages", "dev", "site", "--kv", "TA_KV", "--binding", "TA_TOKEN=devtoken", "--binding", "TA_MOCK=1", "--port", "8789"], "port": 8789 },
+    { "name": "panel-preview", "runtimeExecutable": "python3", "runtimeArgs": ["-m", "http.server", "8790", "--directory", "extension"], "port": 8790 }
+  ]
+}

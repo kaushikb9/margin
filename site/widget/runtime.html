@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval'; style-src 'unsafe-inline'; connect-src 'none'; img-src 'none'">
+<title>Widget</title>
+<style>
+  :root { --bg:#faf8f4; --card:#fff; --ink:#1c1b18; --muted:#78736a; --line:#e6e1d7; --gold:#a8720a; --gold-soft:#f4ead2; --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif; --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: transparent; color: var(--ink); font: 13px/1.5 var(--sans); }
+  .w { display: flex; flex-direction: column; gap: 0.55rem; }
+  label { display: flex; align-items: center; gap: 0.6rem; color: var(--muted); font-size: 13px; }
+  label span.l { min-width: 5.5rem; }
+  input[type=range] { flex: 1; accent-color: var(--gold); }
+  input[type=text], select { flex: 1; font: 0.85rem var(--mono); color: var(--ink); background: var(--card); border: 1px solid var(--line); border-radius: 5px; padding: 0.3rem 0.45rem; }
+  .val { font-variant-numeric: tabular-nums; color: var(--ink); font-weight: 600; min-width: 2.6rem; text-align: right; }
+  .out { display: flex; flex-direction: column; gap: 0.25rem; }
+  .out .ol { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 600; }
+  .bar { display: grid; grid-template-columns: 5.5rem 1fr 3rem; align-items: center; gap: 0.5rem; }
+  .bar .tok { font-family: var(--mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bar .meter { height: 0.7rem; background: var(--line); border-radius: 2px; overflow: hidden; }
+  .bar .meter i { display: block; height: 100%; background: var(--gold); }
+  .bar .pct { text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
+  .bar.top .tok { font-weight: 600; }
+  .toks { display: flex; flex-wrap: wrap; gap: 3px; }
+  .tk { font: 0.8rem var(--mono); border-radius: 3px; padding: 0.1rem 0.25rem; background: var(--gold-soft); white-space: pre; }
+  .tk:nth-child(even) { background: var(--card); border: 1px solid var(--line); }
+  .num { font: 600 1.4rem var(--mono); font-variant-numeric: tabular-nums; }
+  .txt { white-space: pre-wrap; }
+  table { border-collapse: collapse; font: 0.78rem var(--mono); }
+  td, th { border: 1px solid var(--line); padding: 0.15rem 0.35rem; text-align: right; min-width: 2.2rem; }
+  th { color: var(--muted); font-weight: 600; }
+  td.hot { background: var(--gold-soft); }
+  .err { color: var(--muted); font-size: 12px; }
+  @media (prefers-reduced-motion: no-preference) { .bar .meter i { transition: width 90ms linear; } }
+</style>
+</head>
+<body>
+<div class="w" id="w"></div>
+<script>
+// Lives on the desk, not in the extension: MV3 forbids eval on extension
+// pages, and compute needs new Function. The panel frames this page with
+// sandbox="allow-scripts" so it has no origin, no storage and (by its own
+// CSP) no network. The spec arrives by postMessage; compute runs here only. On any failure the parent
+// gets {type:"error"} and the box shows one line.
+(function () {
+  var root = document.getElementById('w');
+  var spec = null, fn = null, inputs = {}, outEls = {};
+
+  function fail(msg) { root.textContent = ''; var p = document.createElement('p'); p.className = 'err'; p.textContent = 'Did not build: ' + msg; root.appendChild(p); parent.postMessage({ type: 'error', message: msg }, '*'); size(); }
+  function size() { parent.postMessage({ type: 'height', height: document.body.scrollHeight + 4 }, '*'); }
+  function el(t, c, txt) { var e = document.createElement(t); if (c) e.className = c; if (txt != null) e.textContent = txt; return e; }
+
+  function build(s) {
+    spec = s; root.textContent = ''; inputs = {}; outEls = {};
+    try { fn = new Function('inputs', s.compute); } catch (e) { return fail('compute does not parse: ' + e.message); }
+    s.inputs.forEach(function (i) {
+      var lab = el('label'); lab.appendChild(el('span', 'l', i.label));
+      var ctl;
+      if (i.kind === 'slider') { ctl = el('input'); ctl.type = 'range'; ctl.min = i.min; ctl.max = i.max; ctl.step = i.step; ctl.value = i.value; var v = el('span', 'val', fmtNum(i.value)); ctl.oninput = function () { inputs[i.id] = Number(ctl.value); v.textContent = fmtNum(inputs[i.id]); run(); }; lab.appendChild(ctl); lab.appendChild(v); inputs[i.id] = Number(i.value); }
+      else if (i.kind === 'text') { ctl = el('input'); ctl.type = 'text'; ctl.value = i.value; ctl.spellcheck = false; ctl.oninput = function () { inputs[i.id] = ctl.value; run(); }; lab.appendChild(ctl); inputs[i.id] = i.value; }
+      else if (i.kind === 'choice') { ctl = el('select'); i.options.forEach(function (o) { var op = el('option', null, String(o)); op.value = String(o); if (o === i.value) op.selected = true; ctl.appendChild(op); }); ctl.onchange = function () { inputs[i.id] = ctl.value; run(); }; lab.appendChild(ctl); inputs[i.id] = String(i.value); }
+      root.appendChild(lab);
+    });
+    s.outputs.forEach(function (o) { var box = el('div', 'out'); box.appendChild(el('div', 'ol', o.label)); var body = el('div'); box.appendChild(body); root.appendChild(box); outEls[o.id] = body; });
+    run(); size();
+  }
+  function fmtNum(n) { return Number.isInteger(n) ? String(n) : n.toFixed(2); }
+
+  function run() {
+    var out;
+    try { out = fn(Object.assign({}, inputs)); } catch (e) { return fail('compute threw: ' + e.message); }
+    if (!out || typeof out !== 'object') return fail('compute returned a non-object');
+    for (var k = 0; k < spec.outputs.length; k++) {
+      var o = spec.outputs[k], v = out[o.id], host = outEls[o.id]; host.textContent = '';
+      if (v === undefined) return fail('no value for output ' + o.id);
+      if (o.kind === 'bars') { if (!Array.isArray(v)) return fail(o.id + ': bars must be an array'); var max = -1, mi = 0; v.forEach(function (b, i) { if (b.value > max) { max = b.value; mi = i; } }); v.forEach(function (b, i) { var row = el('div', 'bar' + (i === mi ? ' top' : '')); row.appendChild(el('span', 'tok', String(b.label))); var m = el('span', 'meter'); var f = el('i'); f.style.width = (Math.max(0, Math.min(1, b.value)) * 100).toFixed(1) + '%'; m.appendChild(f); row.appendChild(m); row.appendChild(el('span', 'pct', (b.value * 100).toFixed(1) + '%')); host.appendChild(row); }); }
+      else if (o.kind === 'tokens') { if (!Array.isArray(v)) return fail(o.id + ': tokens must be an array'); var line = el('div', 'toks'); v.forEach(function (t) { line.appendChild(el('span', 'tk', String(t).replace(/ /g, '·'))); }); host.appendChild(line); }
+      else if (o.kind === 'text') host.appendChild(el('div', 'txt', String(v)));
+      else if (o.kind === 'number') host.appendChild(el('div', 'num', typeof v === 'number' ? fmtNum(v) : String(v)));
+      else if (o.kind === 'grid') { if (!v || !Array.isArray(v.rows)) return fail(o.id + ': grid needs rows'); var tb = el('table'); if (v.labels) { var tr = el('tr'); tr.appendChild(el('th')); v.labels.forEach(function (l) { tr.appendChild(el('th', null, String(l))); }); tb.appendChild(tr); } var gmax = 0; v.rows.forEach(function (r) { r.forEach(function (x) { if (x > gmax) gmax = x; }); }); v.rows.forEach(function (r, ri) { var tr2 = el('tr'); if (v.labels) tr2.appendChild(el('th', null, String(v.labels[ri] || ''))); r.forEach(function (x) { var td = el('td', x === gmax && gmax > 0 ? 'hot' : null, fmtNum(x)); tr2.appendChild(td); }); tb.appendChild(tr2); }); host.appendChild(tb); }
+    }
+    size();
+  }
+
+  window.addEventListener('message', function (e) {
+    if (!e.data || e.data.type !== 'spec') return;
+    if (e.data.vars) for (var k in e.data.vars) document.documentElement.style.setProperty(k, e.data.vars[k]);
+    build(e.data.spec);
+  });
+  size();
+})();
+</script>
+</body>
+</html>

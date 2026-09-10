@@ -1,0 +1,16 @@
+name = "ta-kb"
+compatibility_date = "2026-08-01"
+pages_build_output_dir = "site"
+
+# Create with: npx wrangler kv namespace create TA_KV
+# then paste the id here. Secrets (never in this file):
+#   npx wrangler pages secret put OPENROUTER_API_KEY --project-name ta-kb
+#   npx wrangler pages secret put TA_TOKEN --project-name ta-kb
+[[kv_namespaces]]
+binding = "TA_KV"
+id = "REPLACE_WITH_KV_NAMESPACE_ID"
+
+# Optional model overrides (plain vars, not secrets):
+# [vars]
+# TA_MODEL_COMPOSER = "openai/gpt-oss-120b"
+# TA_MODEL_DEEPER   = "deepseek/deepseek-v4-pro"

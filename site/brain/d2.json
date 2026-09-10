@@ -1,0 +1,654 @@
+{
+  "milestone": "d2",
+  "title": "The decoder-only transformer",
+  "cluster": {
+    "id": "keyboard",
+    "name": "Phone keyboard autocomplete",
+    "thread": "Same keyboard, now opened up. In Milestone 2 the question is how the guess is actually computed: how the pieces you have typed talk to each other so that the suggestion for the next piece depends on all of them, and why editing an earlier word changes the suggestion at the end."
+  },
+  "notes": [
+    {
+      "id": "c-bigram-baseline",
+      "title": "The bigram baseline",
+      "aliases": [
+        "bigram",
+        "simplest model",
+        "one token of context",
+        "lookup model",
+        "baseline"
+      ],
+      "prereqs": [
+        "c-next-token-prediction",
+        "c-embedding"
+      ],
+      "unlocks": [
+        "c-batch-block",
+        "c-weighted-aggregation"
+      ],
+      "oneLiner": "The simplest language model looks at one token and reads the next-token scores straight out of a table. Everything after it is about looking at more than one.",
+      "explanation": "The dumbest keyboard possible: for each piece, a fixed list of what tends to follow it. \"in\" → \"the\", \"five\" → \"minutes\". No memory of anything earlier. Karpathy builds exactly this first: an embedding table of size vocab × vocab, so the row for a token is already its logits for the next token. It trains, the loss drops a bit, and it generates gibberish with the right letter statistics. The point is not the model; it is the scaffolding. Data loading, loss, sampling, the training loop — all of it is in place before any transformer appears, and every later improvement is measured against this number.",
+      "wrongVersion": {
+        "claim": "You need the transformer before anything works at all.",
+        "tell": "no sense that the training loop is model-independent"
+      },
+      "anchors": [
+        {
+          "src": "kCc8FmEb1nY",
+          "t": 1353,
+          "quote": "Implement pytorch module directly that implements the byr language model"
+        },
+        {
+          "src": "kCc8FmEb1nY",
+          "t": 1843,
+          "quote": "that gives us the logits which we then convert to probabilities via softmax and then we use tor. multinomial to sample"
+        }
+      ],
+      "widgetHint": null
+    },
+    {
+      "id": "c-batch-block",
+      "title": "Block size and batch",
+      "aliases": [
+        "block size",
+        "batch",
+        "batch size",
+        "chunks",
+        "B T C",
+        "shapes",
+        "dimensions",
+        "tensor shape"
+      ],
+      "prereqs": [
+        "c-context-window",
+        "c-bigram-baseline"
+      ],
+      "unlocks": [
+        "c-weighted-aggregation",
+        "c-self-attention"
+      ],
+      "oneLiner": "Block size (T) is how many tokens a training example spans; batch (B) is how many examples are processed at once. Almost every tensor in the model is B × T × something.",
+      "explanation": "Training the keyboard means showing it many short runs of text. Block size is the length of one run — the most context the model will ever be trained to look back over. Batch is how many runs are stacked together so the GPU does them in one go; the runs in a batch never talk to each other. One trick inside a block: a run of length T actually gives T training examples at once, because position 3 predicts position 4 using tokens 1–3, position 4 predicts 5 using 1–4, and so on. From here on, when you see a shape written B, T, C — batch, time (position in the block), channels (the width of the vector at that position) — that is the frame every operation in the transformer is described in.",
+      "wrongVersion": {
+        "claim": "The batch dimension lets tokens in different examples share information.",
+        "tell": "expects cross-batch mixing; the batch is purely for throughput"
+      },
+      "anchors": [
+        {
+          "src": "kCc8FmEb1nY",
+          "t": 906,
+          "quote": "length typically at least in the code I usually write is called block size"
+        },
+        {
+          "src": "kCc8FmEb1nY",
+          "t": 1091,
+          "quote": "there's one more Dimension to care about and that is the batch Dimension"
+        }
+      ],
+      "widgetHint": null
+    },
+    {
+      "id": "c-loss-cross-entropy",
+      "title": "Cross-entropy loss",
+      "aliases": [
+        "cross entropy",
+        "negative log likelihood",
+        "nll",
+        "loss function",
+        "how is loss computed"
+      ],
+      "prereqs": [
+        "c-logits-softmax",
+        "c-training-loop"
+      ],
+      "unlocks": [],
+      "oneLiner": "Cross-entropy is minus the log of the probability the model gave to the token that actually came next. Perfect confidence in the right answer scores zero; confident wrongness scores huge.",
+      "explanation": "Score a keyboard guess like this: look at the probability it assigned to the piece that really followed, take the log, flip the sign. If it gave \"minutes\" 90%, the loss is −log 0.9 ≈ 0.1. If it gave it 1%, the loss is −log 0.01 ≈ 4.6. Averaged over every position in every batch, that single number is what training drives down. Two things follow. The starting loss for a 65-way choice is about log 65 ≈ 4.17, which is why Karpathy checks the initial loss against that. And because it is a log, being very wrong is punished much more than being slightly wrong is rewarded — the model is pushed hardest away from confident mistakes.",
+      "wrongVersion": {
+        "claim": "Loss is the percentage of wrong predictions.",
+        "tell": "thinks of accuracy rather than probability assigned to the truth"
+      },
+      "anchors": [
+        {
+          "src": "kCc8FmEb1nY",
+          "t": 1509,
+          "quote": "which is also implemented in pytorch under the name cross entropy"
+        }
+      ],
+      "widgetHint": "loss-for-a-guess"
+    },
+    {
+      "id": "c-positional-encoding",
+      "title": "Positional information",
+      "aliases": [
+        "positional encoding",
+        "positional embedding",
+        "position",
+        "order",
+        "attention has no notion of space",
+        "where in the sequence"
+      ],
+      "prereqs": [
+        "c-embedding",
+        "c-batch-block"
+      ],
+      "unlocks": [
+        "c-self-attention",
+        "c-attention-as-communication"
+      ],
+      "oneLiner": "Attention on its own does not know where a token sits. A second learned table gives each position its own vector, added to the token's embedding, so \"first word\" and \"fifth word\" feel different.",
+      "explanation": "Hand the keyboard a bag of the pieces you typed, shuffled, and ask for the next one. It cannot do it: \"five in there be I'll\" is not a sentence. But the attention mechanism, by its nature, treats the tokens as a set — it has no built-in sense of order. So the model is given one: a table with one learned vector per position in the block, and the vector for position i is added to the embedding of whatever token is at position i. Now the vector the model works with carries both what the token is and where it is. Karpathy's note: attention operates over sets, which is why positions have to be encoded explicitly. This is the reason a model has a fixed maximum context — the position table only has that many rows.",
+      "wrongVersion": {
+        "claim": "The model reads left to right, so it knows the order.",
+        "tell": "assumes order is implicit in processing; it is not"
+      },
+      "anchors": [
+        {
+          "src": "kCc8FmEb1nY",
+          "t": 3658,
+          "quote": "have a pause embedding which is the positional embedding"
+        },
+        {
+          "src": "kCc8FmEb1nY",
+          "t": 4368,
+          "quote": "notice that there is no notion of space so attention simply acts over like a set"
+        }
+      ],
+      "widgetHint": null
+    },
+    {
+      "id": "c-weighted-aggregation",
+      "title": "The matrix-multiply trick: averaging the past",
+      "aliases": [
+        "averaging",
+        "weighted average",
+        "weighted aggregation",
+        "matrix multiply",
+        "triangular matrix",
+        "tril",
+        "version 1 2 3",
+        "bag of words"
+      ],
+      "prereqs": [
+        "c-batch-block",
+        "c-positional-encoding"
+      ],
+      "unlocks": [
+        "c-self-attention",
+        "c-causal-mask"
+      ],
+      "oneLiner": "Multiplying by a lower-triangular matrix whose rows sum to one is the same as giving every position a weighted average of the positions before it. Attention is this trick with the weights made data-dependent.",
+      "explanation": "Before any attention — before the keyboard is allowed to be clever about which earlier words matter — Karpathy builds the weakest possible way for tokens to share information: each position's vector becomes the plain average of itself and every earlier position. A for-loop does it; then he shows the same thing as one matrix multiply. Take a T×T matrix that is all ones below the diagonal and zeros above, normalise each row to sum to one, and multiply it by the T×C token vectors. Row i of the result is the average of rows 0…i. That is the entire mechanism: a weights matrix says how much each position takes from each other position, and the multiply does the mixing. It is lossy — a plain average throws away who said what — but the shape is now right. Self-attention keeps this exact multiply and only changes how the weights matrix is filled in.",
+      "wrongVersion": {
+        "claim": "Attention is a special new operation unlike ordinary matrix maths.",
+        "tell": "does not see the aggregation as a matmul with a weights matrix"
+      },
+      "anchors": [
+        {
+          "src": "kCc8FmEb1nY",
+          "t": 2640,
+          "quote": "to just do an average of all the um of all the preceding elements"
+        },
+        {
+          "src": "kCc8FmEb1nY",
+          "t": 3249,
+          "quote": "trick is we were able to use batched Matrix multiply to do this uh aggregation really and it's a weighted"
+        }
+      ],
+      "widgetHint": "triangular-average"
+    },
+    {
+      "id": "c-causal-mask",
+      "title": "The causal mask",
+      "aliases": [
+        "causal",
+        "mask",
+        "masked attention",
+        "negative infinity",
+        "future tokens",
+        "can't look ahead",
+        "autoregressive mask"
+      ],
+      "prereqs": [
+        "c-weighted-aggregation"
+      ],
+      "unlocks": [
+        "c-self-attention",
+        "c-decoder-only",
+        "c-kv-stability"
+      ],
+      "oneLiner": "Positions may only take information from earlier positions. That is enforced by setting the weights for future positions to minus infinity before softmax, so they become exactly zero.",
+      "explanation": "The keyboard is guessing the next piece, so it must not peek at it. In the weights matrix, every entry above the diagonal — position i looking at position j > i — is set to −∞ before the softmax. exp(−∞) is 0, so after softmax those weights are exactly zero and the row still sums to one over the allowed positions. That is the whole mask: one triangular matrix of zeros and minus-infinities. Two consequences worth holding on to. During training, this is what lets one block of T tokens serve as T separate examples at once, each predicting the next token with only its own past. And it is what makes the model \"decoder-only\": a decoder is just a block that carries this mask.",
+      "wrongVersion": {
+        "claim": "The model is prevented from seeing future tokens by feeding them one at a time.",
+        "tell": "does not know the whole block is processed in parallel with a mask"
+      },
+      "anchors": [
+        {
+          "src": "kCc8FmEb1nY",
+          "t": 3320,
+          "quote": "for all the elements where Trill is equal equal Z make them be negative Infinity"
+        },
+        {
+          "src": "kCc8FmEb1nY",
+          "t": 4460,
+          "quote": "where the future tokens will not communicate to the Past tokens"
+        }
+      ],
+      "widgetHint": "mask-matrix"
+    },
+    {
+      "id": "c-self-attention",
+      "title": "Self-attention: query, key, value",
+      "aliases": [
+        "self attention",
+        "self-attention",
+        "attention",
+        "query",
+        "key",
+        "value",
+        "qkv",
+        "affinity",
+        "affinities",
+        "dot product",
+        "what am I looking for",
+        "what do I contain"
+      ],
+      "prereqs": [
+        "c-weighted-aggregation",
+        "c-causal-mask",
+        "c-positional-encoding"
+      ],
+      "unlocks": [
+        "c-attention-as-communication",
+        "c-scaled-attention",
+        "c-multi-head",
+        "c-kv-stability"
+      ],
+      "oneLiner": "Every position emits a query (what am I looking for), a key (what do I contain) and a value (what I will pass on). Weights are query·key similarities, softmaxed; the output is the weighted sum of values.",
+      "explanation": "Go back to the averaging trick and make the weights depend on the tokens. Each position's vector is pushed through three small learned matrices to produce three vectors. The query is what this position is looking for. The key is what this position has to offer. The dot product of one position's query with every earlier position's key is an affinity: high when they match, low when they do not. Softmax those affinities and they become the row of the weights matrix. Then, instead of averaging the raw vectors, average the values — a third projection, \"if you find me interesting, here is what I will tell you\". So when the keyboard is at \"in five\" and the query says \"looking for a unit of time\", the key of an earlier \"meeting\" matches, its value flows in, and \"minutes\" beats \"years\". Nothing in this description uses the word \"focus\"; it is vectors, similarities, weights and a sum.",
+      "wrongVersion": {
+        "claim": "Attention is the model focusing on the important words.",
+        "tell": "the checkpoint explicitly bans this phrasing; explain with vectors and weights only"
+      },
+      "anchors": [
+        {
+          "src": "kCc8FmEb1nY",
+          "t": 3849,
+          "quote": "it will emit a query and it will emit a key now the query Vector roughly speaking is what am I looking for"
+        },
+        {
+          "src": "kCc8FmEb1nY",
+          "t": 3858,
+          "quote": "the key Vector roughly speaking is what do I"
+        },
+        {
+          "src": "kCc8FmEb1nY",
+          "t": 4280,
+          "quote": "if you find me interesting here's what I will communicate to you and that's stored in v"
+        }
+      ],
+      "widgetHint": "attention-grid"
+    },
+    {
+      "id": "c-attention-as-communication",
+      "title": "Attention as message passing on a graph",
+      "aliases": [
+        "communication",
+        "message passing",
+        "directed graph",
+        "nodes",
+        "content addressed",
+        "content-addressed"
+      ],
+      "prereqs": [
+        "c-self-attention"
+      ],
+      "unlocks": [
+        "c-decoder-only"
+      ],
+      "oneLiner": "Think of positions as nodes in a directed graph. Each node broadcasts a key and a value; each node gathers, by content match, from the nodes pointing at it. Language modelling is the special case where edges only point forward.",
+      "explanation": "Karpathy's own summary, and the one the Milestone 2 objective asks for. Forget \"the sentence\"; picture the pieces you have typed as T nodes. Each node holds a vector. Each node announces what it is looking for (query) and what it contains (key), and prepares what it would send if asked (value). Edges say who may listen to whom; along every edge, the listener scores the sender by query·key, normalises the scores, and pulls in a weighted mix of the senders' values. The lookup is by content — a node finds its sources by what they contain, not by where they sit — which is why position has to be added separately. In a language model the graph happens to be triangular: node i listens to nodes 0…i. That is a choice, not a law; attention itself works on any graph, and an encoder simply lets everyone listen to everyone.",
+      "wrongVersion": {
+        "claim": "Attention weights explain which words the model found important.",
+        "tell": "plan.json misconception 2: weights are routing coefficients in one computation, not faithful explanations"
+      },
+      "anchors": [
+        {
+          "src": "kCc8FmEb1nY",
+          "t": 4361,
+          "quote": "in principle attention can be applied to any arbitrary directed graph and it's just a communication mechanism between the nodes"
+        },
+        {
+          "src": "kCc8FmEb1nY",
+          "t": 3959,
+          "quote": "independently produce a key and a query so no communication has happened yet but the communication comes now"
+        }
+      ],
+      "widgetHint": null
+    },
+    {
+      "id": "c-scaled-attention",
+      "title": "Why divide by the square root of head size",
+      "aliases": [
+        "scaled",
+        "scaled dot product",
+        "sqrt",
+        "square root",
+        "head size",
+        "variance",
+        "sharp softmax",
+        "one-hot"
+      ],
+      "prereqs": [
+        "c-self-attention"
+      ],
+      "unlocks": [],
+      "oneLiner": "Dot products of two unit-variance vectors of length d have variance d. Dividing by √d brings them back to unit variance, so the softmax stays soft instead of collapsing onto one position.",
+      "explanation": "The affinities are dot products. Add up d products of random numbers and the total's spread grows with d. Feed large-spread numbers into a softmax and it turns into a near one-hot: one position gets all the weight, every other node is ignored, and — early in training especially — the model is stuck taking dictation from a single token — the keyboard fixating on one earlier word and ignoring the rest. Dividing every affinity by √(head size) restores the spread to about one, and the softmax stays diffuse. That is all the \"scaled\" in scaled dot-product attention means. It is a normalisation for numerical health, not a modelling idea, but leaving it out is one of the classic ways a from-scratch transformer quietly fails to learn.",
+      "wrongVersion": {
+        "claim": "The scaling is a hyperparameter tuned for accuracy.",
+        "tell": "does not connect it to softmax saturation"
+      },
+      "anchors": [
+        {
+          "src": "kCc8FmEb1nY",
+          "t": 4641,
+          "quote": "they call it the scaled attention and it's kind of like an important normalization"
+        }
+      ],
+      "widgetHint": "softmax-sharpness"
+    },
+    {
+      "id": "c-multi-head",
+      "title": "Multi-head attention",
+      "aliases": [
+        "multi-head",
+        "multihead",
+        "heads",
+        "multiple heads",
+        "parallel attention",
+        "concatenate"
+      ],
+      "prereqs": [
+        "c-self-attention"
+      ],
+      "unlocks": [
+        "c-transformer-block"
+      ],
+      "oneLiner": "Several independent attentions run in parallel, each with its own query, key and value projections, and their outputs are concatenated. Different heads can look for different things.",
+      "explanation": "One attention head asks one kind of question of the context. But the keyboard needs several at once: one head's query might be looking for the subject, another for a recent number, another for a matching quote mark. Multi-head attention runs n heads side by side, each with smaller vectors (head size = channels ÷ heads), each producing its own weights matrix and its own weighted sum of values. The n results are concatenated back to full width and mixed by one more linear layer. Karpathy's phrasing is that it is \"just multiple attentions in parallel\" — nothing new mechanically, but it lets the same layer gather several different kinds of information for each position instead of forcing one compromise.",
+      "wrongVersion": {
+        "claim": "Heads are layers.",
+        "tell": "confuses parallel heads within a layer with stacked layers"
+      },
+      "anchors": [
+        {
+          "src": "kCc8FmEb1nY",
+          "t": 4929,
+          "quote": "just applying multiple attentions in parallel and concatenating their results"
+        }
+      ],
+      "widgetHint": null
+    },
+    {
+      "id": "c-feedforward-mlp",
+      "title": "The feed-forward layer",
+      "aliases": [
+        "feed forward",
+        "feedforward",
+        "mlp",
+        "multi-layer perceptron",
+        "per node",
+        "position-wise",
+        "think on what was gathered"
+      ],
+      "prereqs": [
+        "c-multi-head"
+      ],
+      "unlocks": [
+        "c-transformer-block"
+      ],
+      "oneLiner": "After attention has gathered information for a position, a small two-layer network processes that position's vector on its own. Attention is where tokens talk; the MLP is where each token thinks.",
+      "explanation": "Attention moves information between positions but does very little to it — it is weighted sums. Once a position has pulled in what it needs, it gets a private computation: a linear layer that widens the vector (typically 4×), a nonlinearity, and a linear layer that narrows it back. The same MLP is applied to every position independently, which is why the paper calls it position-wise. Karpathy's split: the tokens communicate in attention, then think individually in the feed-forward. In the keyboard, attention is the step where \"in five\" collects that a meeting was mentioned; the MLP is the step where that collected vector gets turned into \"so a duration is expected here\". Most of a transformer's parameters live in these MLPs.",
+      "wrongVersion": {
+        "claim": "The feed-forward layer mixes information across positions too.",
+        "tell": "does not see it as strictly per-position"
+      },
+      "anchors": [
+        {
+          "src": "kCc8FmEb1nY",
+          "t": 5104,
+          "quote": "position wise feed forward networks is just a simple little MLP"
+        },
+        {
+          "src": "kCc8FmEb1nY",
+          "t": 5113,
+          "quote": "this computation is on a per node level"
+        }
+      ],
+      "widgetHint": null
+    },
+    {
+      "id": "c-residual-connections",
+      "title": "Residual connections",
+      "aliases": [
+        "residual",
+        "skip connection",
+        "residual pathway",
+        "residual stream",
+        "add",
+        "x plus",
+        "gradient highway"
+      ],
+      "prereqs": [
+        "c-feedforward-mlp"
+      ],
+      "unlocks": [
+        "c-transformer-block",
+        "c-layernorm"
+      ],
+      "oneLiner": "Each sub-layer adds its output to its input rather than replacing it. The vector for a position is a running total that every block contributes to, and gradients flow straight back along the addition.",
+      "explanation": "Picture one wire running top to bottom for each piece you typed — the residual pathway. Every attention block and every MLP forks off that wire, does its computation, and adds the result back in. Nothing is ever overwritten. Karpathy's image is exactly this fork-and-rejoin: you can go from input to output along the wire alone, touching nothing. Two reasons this matters. At initialisation the blocks contribute almost nothing, so the network starts as a near-identity and deep stacks still train. And because addition passes gradients through unchanged, the loss signal reaches early layers without being diluted through twenty multiplications. When people talk about \"the residual stream\" in interpretability, this wire is what they mean.",
+      "wrongVersion": {
+        "claim": "Each layer transforms the representation and passes the new one on.",
+        "tell": "thinks of layers as replacing rather than adding"
+      },
+      "anchors": [
+        {
+          "src": "kCc8FmEb1nY",
+          "t": 5348,
+          "quote": "you have this uh residual pathway and you are free to Fork off from the residual pathway perform some computation and then project back to the residual pathway via addition"
+        }
+      ],
+      "widgetHint": null
+    },
+    {
+      "id": "c-layernorm",
+      "title": "Layer normalisation",
+      "aliases": [
+        "layer norm",
+        "layernorm",
+        "normalization",
+        "normalisation",
+        "batch norm",
+        "pre-norm",
+        "unit gaussian"
+      ],
+      "prereqs": [
+        "c-residual-connections"
+      ],
+      "unlocks": [
+        "c-transformer-block"
+      ],
+      "oneLiner": "Before each sub-layer, each position's vector is rescaled to zero mean and unit variance across its own channels. It keeps the numbers in a healthy range as the residual total grows.",
+      "explanation": "The residual wire under each typed piece keeps adding things, so the vector's scale drifts upward layer by layer. LayerNorm resets it: for one position, take its C channels, subtract their mean, divide by their standard deviation, then apply a learned per-channel scale and shift. It is applied per position and per example — nothing across the batch, unlike batch norm, which is why Karpathy can drop it in with a one-line change to the batch-norm code from his earlier series. Modern practice, and his code, puts it before each sub-layer (pre-norm) rather than after as in the original paper. It is plumbing rather than an idea, but the network does not train well without it.",
+      "wrongVersion": {
+        "claim": "LayerNorm normalises across the batch like BatchNorm.",
+        "tell": "confuses the two axes"
+      },
+      "anchors": [
+        {
+          "src": "kCc8FmEb1nY",
+          "t": 5589,
+          "quote": "and layer Norm is very very similar to bash Norm so remember back to our"
+        }
+      ],
+      "widgetHint": null
+    },
+    {
+      "id": "c-transformer-block",
+      "title": "The transformer block, stacked",
+      "aliases": [
+        "block",
+        "transformer block",
+        "n_layer",
+        "layers",
+        "stack",
+        "depth",
+        "architecture",
+        "dropout",
+        "scaling up"
+      ],
+      "prereqs": [
+        "c-multi-head",
+        "c-feedforward-mlp",
+        "c-residual-connections",
+        "c-layernorm"
+      ],
+      "unlocks": [
+        "c-decoder-only"
+      ],
+      "oneLiner": "One block is: norm → multi-head attention → add; norm → MLP → add. Stack N of them, put a final norm and a linear layer to vocabulary size on top, and that is the model.",
+      "explanation": "Assemble the keyboard's guessing machine. A block takes the B×T×C residual, normalises, runs multi-head attention, adds back; normalises again, runs the MLP, adds back. Communicate, then compute, twice guarded by normalisation. Stack six of these, or ninety-six, and the vector at each position gets repeatedly enriched by its past and reprocessed. On top sits one more LayerNorm and a linear layer from C to vocab size — the logits. Dropout, added just before each residual addition during training, randomly zeroes activations so the network does not lean on any one path. Scaling the model up is then only numbers: more layers, wider C, more heads, longer block — the shape of the code does not change from the toy to GPT-3.",
+      "wrongVersion": {
+        "claim": "Bigger models have a different architecture.",
+        "tell": "expects GPT-3 to be structurally unlike the 10M-parameter toy"
+      },
+      "anchors": [
+        {
+          "src": "kCc8FmEb1nY",
+          "t": 5851,
+          "quote": "we actually have a pretty complete uh Transformer according to the original paper and it's a decoder only Transformer"
+        },
+        {
+          "src": "kCc8FmEb1nY",
+          "t": 5890,
+          "quote": "I added a Dropout so Dropout is something that you can add right before the residual connection"
+        }
+      ],
+      "widgetHint": null
+    },
+    {
+      "id": "c-decoder-only",
+      "title": "Decoder-only, and where the encoder went",
+      "aliases": [
+        "decoder only",
+        "decoder-only",
+        "encoder",
+        "encoder decoder",
+        "cross attention",
+        "cross-attention",
+        "why is it called decoder",
+        "gpt vs bert"
+      ],
+      "prereqs": [
+        "c-causal-mask",
+        "c-attention-as-communication",
+        "c-transformer-block"
+      ],
+      "unlocks": [
+        "c-pretraining-finetuning"
+      ],
+      "oneLiner": "A decoder is a block with the causal mask. An encoder is the same block without it. GPT has no encoder and no cross-attention because it has no separate input to read from — the prompt is just the start of the output.",
+      "explanation": "The original paper is a translation system: an encoder reads the French sentence with every token allowed to see every other, and a decoder writes the English with the causal mask, pulling from the encoder through cross-attention — queries from the decoder, keys and values from the encoder. GPT drops the left half. There is nothing to condition on except the text so far, so the prompt is simply the first tokens of the sequence and the same masked blocks handle everything. Karpathy's diagram edit is literally crossing out the encoder and the cross-attention arrow. When someone says decoder-only, they mean: one stack, triangular mask, no side input. The keyboard is decoder-only too — what you have typed is the whole world.",
+      "wrongVersion": {
+        "claim": "GPT decodes what an encoder understood.",
+        "tell": "expects a reading stage before a writing stage"
+      },
+      "anchors": [
+        {
+          "src": "kCc8FmEb1nY",
+          "t": 4594,
+          "quote": "cross attention is used when there's a separate source of nodes we'd like to pull information from into our nodes"
+        },
+        {
+          "src": "kCc8FmEb1nY",
+          "t": 6154,
+          "quote": "the picture doesn't exactly match up to what we've done so what's going on with all these digital Parts here"
+        }
+      ],
+      "widgetHint": null
+    },
+    {
+      "id": "c-kv-stability",
+      "title": "Why earlier tokens' keys and values do not change during generation",
+      "aliases": [
+        "kv cache",
+        "stable keys",
+        "stable values",
+        "recompute",
+        "why cache",
+        "incremental decoding",
+        "past tokens fixed"
+      ],
+      "prereqs": [
+        "c-self-attention",
+        "c-causal-mask",
+        "c-inference"
+      ],
+      "unlocks": [],
+      "oneLiner": "A token's key and value are computed from its own vector, and under the causal mask its vector depends only on tokens before it. Appending a new token changes nothing for the old ones, so their K and V can be computed once and kept.",
+      "explanation": "When the keyboard is generating piece by piece, ask what has to be recomputed each step. Position i's key and value come from position i's vector alone — its own linear projections, no communication. And position i's vector, at every layer, was built only from positions 0…i, because the mask forbids looking forward. So when token i+1 arrives, nothing that fed into token i's K and V has changed. They are the same numbers they were last step. The only new work is the new token's own Q, K, V and its attention over the stored keys. That is the entire justification for a KV cache, and the reason the plan's misconception list warns about it: caching skips recomputing old projections, but each new step still attends over a growing history, so generation is not suddenly constant-time.",
+      "wrongVersion": {
+        "claim": "KV cache makes generation O(n).",
+        "tell": "plan.json misconception 3: it removes recomputation of past K/V; attention over history still grows"
+      },
+      "anchors": [
+        {
+          "src": "kCc8FmEb1nY",
+          "t": 3959,
+          "quote": "independently produce a key and a query so no communication has happened yet"
+        },
+        {
+          "src": "kCc8FmEb1nY",
+          "t": 4460,
+          "quote": "where the future tokens will not communicate to the Past tokens"
+        }
+      ],
+      "widgetHint": "kv-timeline"
+    },
+    {
+      "id": "c-pretraining-finetuning",
+      "title": "From the toy model to ChatGPT",
+      "aliases": [
+        "chatgpt",
+        "gpt-3",
+        "nanogpt",
+        "pretraining stage",
+        "fine-tuning stage",
+        "rlhf",
+        "reward model",
+        "alignment"
+      ],
+      "prereqs": [
+        "c-decoder-only",
+        "c-pretraining-vs-posttraining"
+      ],
+      "unlocks": [],
+      "oneLiner": "ChatGPT is the same decoder-only transformer, pretrained on a large slice of the internet to babble text, then fine-tuned on conversations and refined with human preference feedback. The code is the same shape; the data and the scale are not.",
+      "explanation": "The lecture ends by closing the loop with Milestone 1: the keyboard you have been imagining and ChatGPT are the same machine at different sizes. The 10-million-parameter Shakespeare model and GPT-3 share an architecture; GPT-3 is 175 billion parameters trained on 300 billion tokens on thousands of GPUs. That pretraining produces a base model that babbles internet. Then the fine-tuning stage: a smaller dataset of question-and-answer conversations, then a reward model trained on human rankings of responses, then reinforcement learning against that reward model — RLHF. Karpathy's caveat is that this last stage is the part he has not shown and it is where much of the assistant behaviour comes from. For KB's notes: everything after pretraining in this lecture is what the first lecture called post-training, now with names.",
+      "wrongVersion": {
+        "claim": "ChatGPT uses a fundamentally different model from the one in the lecture.",
+        "tell": "does not connect the toy to production"
+      },
+      "anchors": [
+        {
+          "src": "kCc8FmEb1nY",
+          "t": 6543,
+          "quote": "first is the pre-training stage and then the fine-tuning stage in the pre-training stage uh we are training on a large chunk of internet"
+        }
+      ],
+      "widgetHint": null
+    }
+  ]
+}

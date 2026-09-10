@@ -1,0 +1,20 @@
+{
+  "name": "ta",
+  "version": "0.1.0",
+  "private": true,
+  "description": "TA: a Firefox sidebar study companion. Jot beside the lecture; the TA answers and checks under your notes from a precomputed concept brain.",
+  "type": "module",
+  "scripts": {
+    "dev": "npx wrangler pages dev site --kv TA_KV --binding TA_TOKEN=devtoken --binding TA_MOCK=1 --port 8789",
+    "dev:live": "npx wrangler pages dev site --kv TA_KV --binding TA_TOKEN=devtoken --port 8789",
+    "test": "node scripts/check-brain.mjs && node --test tests/*.test.js",
+    "brain": "node scripts/check-brain.mjs",
+    "quote": "node scripts/quote.mjs",
+    "transcript": "node scripts/transcript.mjs",
+    "bench": "node scripts/bench.mjs",
+    "export": "node scripts/export.mjs",
+    "ext": "cd extension && zip -qr ../ta-extension.zip . -x '.*' && echo wrote ta-extension.zip",
+    "deploy": "npx wrangler pages deploy site --project-name ta-kb",
+    "preview": "python3 -m http.server 8790 --directory extension"
+  }
+}

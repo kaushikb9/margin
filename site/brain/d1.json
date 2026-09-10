@@ -1,0 +1,755 @@
+{
+  "milestone": "d1",
+  "title": "From text to a probability distribution",
+  "cluster": {
+    "id": "keyboard",
+    "name": "Phone keyboard autocomplete",
+    "thread": "The three suggestions above your phone keyboard are a tiny language model doing the same job as ChatGPT: given everything typed so far, guess the next piece. Every note in Milestones 1 and 2 uses this one example. Tokens are the pieces in its dictionary; parameters are the numbers that were tuned by watching millions of messages; temperature is how adventurous the suggestions are; attention is how a suggestion changes when you go back and edit an earlier word."
+  },
+  "notes": [
+    {
+      "id": "c-pretraining-data",
+      "title": "Pretraining data",
+      "aliases": [
+        "fineweb",
+        "training data",
+        "internet data",
+        "dataset",
+        "scraping",
+        "common crawl"
+      ],
+      "prereqs": [],
+      "unlocks": [
+        "c-tokenization",
+        "c-base-model"
+      ],
+      "oneLiner": "The raw material is a filtered scrape of the public internet — tens of terabytes of text — not a curated textbook.",
+      "explanation": "Your keyboard learned to suggest words by watching a huge pile of real messages. An LLM's pile is the public internet: pages crawled, junk stripped, duplicates removed, non-English dropped, personal data scrubbed. FineWeb, the dataset Karpathy walks through, is what that looks like after cleaning — about 44 TB of text, roughly 15 trillion tokens. Two things follow. First, the model only knows what was there: a fact that appears rarely online is a fact it will be vague about. Second, everything downstream — tokens, weights, the base model — is shaped by this pile. When someone says a model is \"trained on the internet\", this filtered, deduplicated slice is what they mean, and the filtering choices are part of the model's character.",
+      "wrongVersion": {
+        "claim": "The model was trained on the whole internet, so it has read everything.",
+        "tell": "assumes any fact online is known; ignores filtering and rarity"
+      },
+      "anchors": [
+        {
+          "src": "7xTGNNLPyMI",
+          "t": 885,
+          "quote": "this is about a 15 trillion token sequence"
+        },
+        {
+          "src": "7xTGNNLPyMI",
+          "t": 3585,
+          "quote": "we take Internet documents we break them up into these tokens"
+        }
+      ],
+      "widgetHint": null
+    },
+    {
+      "id": "c-tokenization",
+      "title": "Tokenization",
+      "aliases": [
+        "token",
+        "tokens",
+        "tokenizer",
+        "bpe",
+        "byte pair",
+        "tiktoken",
+        "tiktokenizer",
+        "pieces"
+      ],
+      "prereqs": [
+        "c-pretraining-data"
+      ],
+      "unlocks": [
+        "c-vocab-size",
+        "c-context-window",
+        "c-embedding",
+        "c-next-token-prediction"
+      ],
+      "oneLiner": "Text is chopped into a fixed vocabulary of pieces, and every piece becomes an integer id. That is the only thing the model ever sees.",
+      "explanation": "Your keyboard does not think in letters and it does not think in words. It has a fixed dictionary of pieces — some are whole common words, some are fragments, some are a space plus a word — and it chops whatever you type into those pieces. Nothing outside the dictionary can be represented, so an unusual word gets broken into several pieces rather than rejected. Each piece has an id, and the id is arbitrary: it carries no meaning, it is a seat number. This is why a model's cost is counted in tokens rather than words, why identifiers like SetMethods cost more than they look, and why a model can be strangely bad at spelling — it never saw the letters as letters.",
+      "wrongVersion": {
+        "claim": "A token is a word.",
+        "tell": "counts words, surprised by code or rare names tripling the count"
+      },
+      "anchors": [
+        {
+          "src": "7xTGNNLPyMI",
+          "t": 913,
+          "quote": "they're just unique IDs"
+        },
+        {
+          "src": "7xTGNNLPyMI",
+          "t": 7458,
+          "quote": "the models don't see characters they see tokens"
+        }
+      ],
+      "widgetHint": "live-splitter"
+    },
+    {
+      "id": "c-vocab-size",
+      "title": "Vocabulary size",
+      "aliases": [
+        "vocab",
+        "vocabulary",
+        "100k tokens",
+        "symbols",
+        "alphabet of tokens"
+      ],
+      "prereqs": [
+        "c-tokenization"
+      ],
+      "unlocks": [
+        "c-logits-softmax"
+      ],
+      "oneLiner": "The dictionary has a fixed size — around 100,000 pieces for GPT-4 — and every prediction is a choice among exactly those.",
+      "explanation": "The keyboard's dictionary is finite. When it suggests the next piece, it is picking from that list and nothing else. GPT-4's list has about 100,000 entries; the toy model in the second lecture has 65 (single characters). The size is a trade: a bigger vocabulary means fewer pieces per sentence and a shorter sequence to process, but more entries to choose between and more parameters spent on the lookup table. This number turns up everywhere later — it is the width of the final layer, the length of the probability vector, the size of the embedding table. If a diagram has a dimension labelled V or vocab_size, this is it.",
+      "wrongVersion": {
+        "claim": "The model can output any word; the vocabulary is just a convenience.",
+        "tell": "expects the model to invent new tokens"
+      },
+      "anchors": [
+        {
+          "src": "7xTGNNLPyMI",
+          "t": 859,
+          "quote": "one-dimensional sequences of those symbols"
+        }
+      ],
+      "widgetHint": null
+    },
+    {
+      "id": "c-context-window",
+      "title": "Context window",
+      "aliases": [
+        "context",
+        "context length",
+        "window",
+        "sequence length",
+        "block size",
+        "max tokens"
+      ],
+      "prereqs": [
+        "c-tokenization"
+      ],
+      "unlocks": [
+        "c-knowledge-in-weights",
+        "c-in-context-learning"
+      ],
+      "oneLiner": "The context is the sequence of tokens the model can see right now; the window is the maximum length of that sequence.",
+      "explanation": "Your keyboard only looks back a little way — the last few words — when it guesses. The context window is how far back an LLM can look: the run of tokens fed in for this prediction. Everything inside it is directly available and the model treats it like a page it is reading. Everything outside it does not exist for this prediction; it has to be remembered from training, which is a much weaker kind of knowing. That is why pasting a document into the chat works so much better than asking the model to recall it, and why the window's size is a headline number on every model card.",
+      "wrongVersion": {
+        "claim": "The model remembers the whole conversation; the window is just a technical limit.",
+        "tell": "surprised when early details get lost in a long chat"
+      },
+      "anchors": [
+        {
+          "src": "7xTGNNLPyMI",
+          "t": 5723,
+          "quote": "think of the context window as kind of like the working memory of the model"
+        },
+        {
+          "src": "7xTGNNLPyMI",
+          "t": 5306,
+          "quote": "if the information is in the context window um of this llm this actually works pretty well"
+        }
+      ],
+      "widgetHint": null
+    },
+    {
+      "id": "c-next-token-prediction",
+      "title": "Next-token prediction",
+      "aliases": [
+        "next token",
+        "autoregressive",
+        "autoregression",
+        "language modeling",
+        "predict the next",
+        "neural network input output"
+      ],
+      "prereqs": [
+        "c-tokenization"
+      ],
+      "unlocks": [
+        "c-training-loop",
+        "c-inference",
+        "c-logits-softmax"
+      ],
+      "oneLiner": "The entire job is: given a run of tokens, guess the next one. Everything else is built on top of that one task.",
+      "explanation": "Strip the keyboard down and there is one function inside it: take what has been typed, propose the next piece. An LLM is that function, made enormous. During training it is shown a window of tokens from the internet and asked what came next; it already knows the answer, so it can be scored. At use time it is shown your prompt and asked the same question, and then the answer is appended and it is asked again. There is no separate \"understanding\" step and no \"answering\" step. Summarising, coding, translating — all of them are this one move repeated, and every ability the model has is something that turned out to help it guess the next token.",
+      "wrongVersion": {
+        "claim": "The model reads the question, understands it, then writes an answer.",
+        "tell": "expects a planning phase separate from generation"
+      },
+      "anchors": [
+        {
+          "src": "7xTGNNLPyMI",
+          "t": 1201,
+          "quote": "its probabilities become consistent with the uh statistical patterns of how these tokens follow each other"
+        },
+        {
+          "src": "7xTGNNLPyMI",
+          "t": 2562,
+          "quote": "all of them are just trying to predict the next token in the sequence"
+        }
+      ],
+      "widgetHint": null
+    },
+    {
+      "id": "c-parameters-weights",
+      "title": "Parameters and weights",
+      "aliases": [
+        "parameters",
+        "weights",
+        "8b",
+        "405b",
+        "billion parameters",
+        "knobs",
+        "model size"
+      ],
+      "prereqs": [
+        "c-next-token-prediction"
+      ],
+      "unlocks": [
+        "c-training-loop",
+        "c-knowledge-in-weights",
+        "c-model-release"
+      ],
+      "oneLiner": "A parameter is one number in the model. The model is a giant fixed formula, and the parameters are the numbers plugged into it.",
+      "explanation": "Imagine the keyboard's guessing is one long arithmetic formula: multiply this by that, add, squash, repeat. The formula's shape is fixed by the architecture. The numbers inside it — millions or billions of them — are the parameters, also called weights. Karpathy's image is knobs on a DJ set: turn them and the same formula gives different guesses. \"8B\" or \"405B\" is just how many knobs there are. Training is the process of turning the knobs until the guesses match the data; a released model is those knob settings written down. Nothing else is in there — no text, no facts as sentences, just the settings that make good guesses likely.",
+      "wrongVersion": {
+        "claim": "Parameters are the things the model has learned, like entries in a database.",
+        "tell": "asks where a fact is stored, expects a location"
+      },
+      "anchors": [
+        {
+          "src": "7xTGNNLPyMI",
+          "t": 1299,
+          "quote": "think of these parameters as kind of like knobs on a DJ set"
+        },
+        {
+          "src": "7xTGNNLPyMI",
+          "t": 1248,
+          "quote": "a giant mathematical expression together with the parameters or the weights of these neural networks"
+        }
+      ],
+      "widgetHint": null
+    },
+    {
+      "id": "c-training-loop",
+      "title": "Training and loss",
+      "aliases": [
+        "training",
+        "loss",
+        "gradient descent",
+        "backprop",
+        "optimization",
+        "cross entropy",
+        "update",
+        "nudge"
+      ],
+      "prereqs": [
+        "c-parameters-weights",
+        "c-next-token-prediction"
+      ],
+      "unlocks": [
+        "c-base-model"
+      ],
+      "oneLiner": "Training is: guess the next token, measure how wrong the guess was with one number called loss, nudge every parameter to make it slightly less wrong, repeat billions of times.",
+      "explanation": "Picture the keyboard being trained. Show it \"I'll be there in\" from a real message, let it guess, then reveal the real next piece was \"five\". Score the guess with a single number — the loss — that is small when the model put high probability on \"five\" and large when it did not. Then adjust every knob a tiny amount in the direction that would have lowered that loss. Do this for the next window, and the next, across the whole pile. The loss curve going down is the only thing you watch. There is no rule-writing and no fact-entry; the knobs drift into a setting that makes the actual internet likely. The specific score used is cross-entropy: minus the log of the probability given to the right answer.",
+      "wrongVersion": {
+        "claim": "Training means feeding the model facts so it can remember them.",
+        "tell": "talks about training as teaching content rather than adjusting guesses"
+      },
+      "anchors": [
+        {
+          "src": "7xTGNNLPyMI",
+          "t": 2157,
+          "quote": "the loss is a single number that is telling you how well your neural network is performing"
+        },
+        {
+          "src": "7xTGNNLPyMI",
+          "t": 2176,
+          "quote": "the loss is the number that you are watching"
+        }
+      ],
+      "widgetHint": "loss-for-a-guess"
+    },
+    {
+      "id": "c-logits-softmax",
+      "title": "Logits, softmax, probabilities",
+      "aliases": [
+        "logits",
+        "softmax",
+        "probability distribution",
+        "probabilities",
+        "scores",
+        "normalize"
+      ],
+      "prereqs": [
+        "c-vocab-size",
+        "c-next-token-prediction"
+      ],
+      "unlocks": [
+        "c-sampling-temperature",
+        "c-inference"
+      ],
+      "oneLiner": "The model ends by producing one raw score per vocabulary entry (logits); softmax turns those scores into probabilities that add up to one.",
+      "explanation": "At the last step the keyboard has a score for every piece in its dictionary: how plausible each one is as the next piece. Those raw scores are logits — unbounded, some negative. Softmax converts them into a proper distribution: exponentiate each, divide by the total, so every entry is between 0 and 1 and they sum to 1. A big gap between two logits becomes a big gap in probability; nearly equal logits become nearly equal chances. Everything the model \"thinks\" about what comes next is this one vector, as long as the vocabulary. The next-token choice, the loss during training, and the temperature knob all operate on it.",
+      "wrongVersion": {
+        "claim": "The model picks the most likely word.",
+        "tell": "no notion that there is a whole distribution, only a top answer"
+      },
+      "anchors": [
+        {
+          "src": "kCc8FmEb1nY",
+          "t": 1843,
+          "quote": "that gives us the logits which we then convert to probabilities via softmax"
+        }
+      ],
+      "widgetHint": "logits-to-probabilities"
+    },
+    {
+      "id": "c-sampling-temperature",
+      "title": "Sampling and temperature",
+      "aliases": [
+        "temperature",
+        "sampling",
+        "sample",
+        "top-p",
+        "top p",
+        "nucleus",
+        "biased coin",
+        "randomness",
+        "deterministic",
+        "greedy"
+      ],
+      "prereqs": [
+        "c-logits-softmax"
+      ],
+      "unlocks": [
+        "c-inference"
+      ],
+      "oneLiner": "The next token is drawn from the distribution like a biased coin flip. Temperature reshapes the distribution before the flip: low makes it peakier and more repeatable, high makes it flatter and more varied. It does not change which token is most likely.",
+      "explanation": "Your keyboard shows three suggestions but it could show the whole ranked list. Picking the next piece is a weighted lottery over that list — Karpathy's biased coin. Temperature is a dial applied to the logits before softmax. Divide by a small temperature and the top choice pulls away from the rest until, at zero, it is chosen every time. Divide by a large one and the gaps shrink until unlikely pieces get real chances. The ranking never changes. So low temperature buys repeatability, not correctness: if the top token is wrong, you get that wrong token every time and with more confidence. Accuracy comes from the weights and the context; temperature only sets how far down the list the lottery is willing to reach.",
+      "wrongVersion": {
+        "claim": "Low temperature = higher accuracy.",
+        "tell": "KB wrote this on 7 Sept 2026 as a TIL; confuses repeatable with right"
+      },
+      "anchors": [
+        {
+          "src": "7xTGNNLPyMI",
+          "t": 1607,
+          "quote": "we can basically flip a biased coin"
+        },
+        {
+          "src": "7xTGNNLPyMI",
+          "t": 1619,
+          "quote": "are given High probability by the model are more likely to be sampled when you flip this biased coin"
+        }
+      ],
+      "widgetHint": "temperature-slider"
+    },
+    {
+      "id": "c-inference",
+      "title": "Inference",
+      "aliases": [
+        "inference",
+        "generation",
+        "generate",
+        "decode",
+        "running the model",
+        "serving"
+      ],
+      "prereqs": [
+        "c-sampling-temperature",
+        "c-next-token-prediction"
+      ],
+      "unlocks": [
+        "c-base-model",
+        "c-model-release"
+      ],
+      "oneLiner": "Inference is using the trained model: feed tokens in, get a distribution out, sample one token, append it, repeat. No learning happens.",
+      "explanation": "Training is the keyboard being tuned in the factory. Inference is you typing. The knobs are frozen; the model is just run forward: tokens in, probability vector out, one piece sampled, appended to the sequence, run again. That loop is all that generation is. Because each step samples, the same prompt can give different outputs, and because each step only sees the sequence so far, a bad early token cannot be un-chosen later. The knobs do not move during inference — nothing you type changes the model. What Karpathy shows at this point is the model \"dreaming\" internet text: run the loop with no prompt and it produces documents that have the statistics of the web.",
+      "wrongVersion": {
+        "claim": "The model keeps learning from my conversations.",
+        "tell": "expects a correction in chat to change future behaviour"
+      },
+      "anchors": [
+        {
+          "src": "7xTGNNLPyMI",
+          "t": 1571,
+          "quote": "that is the stage called inference so in inference what we're doing is we're generating new data from the model"
+        },
+        {
+          "src": "7xTGNNLPyMI",
+          "t": 1780,
+          "quote": "we're always flipping these coins"
+        }
+      ],
+      "widgetHint": null
+    },
+    {
+      "id": "c-base-model",
+      "title": "Base model",
+      "aliases": [
+        "base model",
+        "pretrained model",
+        "foundation model",
+        "internet document simulator",
+        "llama 3.1 405b",
+        "gpt-2",
+        "dreaming"
+      ],
+      "prereqs": [
+        "c-training-loop",
+        "c-inference"
+      ],
+      "unlocks": [
+        "c-knowledge-in-weights",
+        "c-in-context-learning",
+        "c-pretraining-vs-posttraining",
+        "c-model-release"
+      ],
+      "oneLiner": "A base model is what pretraining produces: an internet document simulator. It continues text; it does not answer questions.",
+      "explanation": "Imagine a keyboard trained only on the raw internet and nothing else. Type a sentence and it continues it — as a forum post, a news article, a product page — whatever the web would have said next. It has no idea you want an answer. That is a base model: the direct output of pretraining, before anyone teaches it to be an assistant. Llama 3.1 405B is the example in the lecture: 405 billion parameters, trained on 15 trillion tokens. Karpathy's phrase is \"internet document simulator on the token level\". It is enormously capable and almost useless raw, which is why almost every model you actually use has gone through post-training on top of it.",
+      "wrongVersion": {
+        "claim": "Llama 3 was trained on 15 million tokens.",
+        "tell": "KB wrote 15 million on 9 Sept 2026; the figure is 15 trillion — the entire FineWeb-scale corpus"
+      },
+      "anchors": [
+        {
+          "src": "7xTGNNLPyMI",
+          "t": 3601,
+          "quote": "this base model is basically an internet document simulator on the token level"
+        },
+        {
+          "src": "7xTGNNLPyMI",
+          "t": 2787,
+          "quote": "the Lama 3.1 4.5 405 billion parameter model so this is the base model"
+        }
+      ],
+      "widgetHint": null
+    },
+    {
+      "id": "c-knowledge-in-weights",
+      "title": "Knowledge in weights vs knowledge in context",
+      "aliases": [
+        "world knowledge",
+        "stored in the parameters",
+        "vague recollection",
+        "working memory",
+        "memorization",
+        "compression of the internet",
+        "zip file",
+        "where is the knowledge"
+      ],
+      "prereqs": [
+        "c-parameters-weights",
+        "c-context-window",
+        "c-base-model"
+      ],
+      "unlocks": [
+        "c-hallucination",
+        "c-tool-use"
+      ],
+      "oneLiner": "Knowledge in the parameters is a vague recollection; knowledge in the context window is working memory. Nothing is stored and looked up.",
+      "explanation": "Your phone keyboard has no list of your sentences in it. It has a pile of numbers that were nudged, over millions of messages, until its guesses got good. Type \"I'll be there in five\" and it offers \"minutes\" — not because \"minutes\" is filed anywhere, but because the numbers came out that way. An LLM is the same trick at scale. Training left the weights in a shape that makes true-ish continuations more likely than false ones — Karpathy calls it a lossy compression of the internet, a zip file with a lot lost. That is why a wrong answer arrives in the same confident voice as a right one: there is no lookup that could miss. Anything actually in the context window is different: the model can read it directly, the way you can reread a page. Weights are what it half-remembers; context is what is in front of it.",
+      "wrongVersion": {
+        "claim": "The LLM retrieves an answer from its parameters.",
+        "tell": "asks how or where a fact is stored; expects retrieval semantics"
+      },
+      "anchors": [
+        {
+          "src": "7xTGNNLPyMI",
+          "t": 3088,
+          "quote": "it's all just a vague recollection of Internet documents because the information is not stored explicitly"
+        },
+        {
+          "src": "7xTGNNLPyMI",
+          "t": 5983,
+          "quote": "knowledge in the parameters of the neural network is a vague recollection the knowledge in the tokens that make up"
+        },
+        {
+          "src": "7xTGNNLPyMI",
+          "t": 3015,
+          "quote": "you can think of um these 405 billion parameters is a kind of compression of the internet"
+        }
+      ],
+      "widgetHint": null
+    },
+    {
+      "id": "c-in-context-learning",
+      "title": "In-context learning and few-shot prompts",
+      "aliases": [
+        "in context learning",
+        "few shot",
+        "few-shot",
+        "examples in the prompt",
+        "system prompt examples",
+        "pattern completion"
+      ],
+      "prereqs": [
+        "c-base-model",
+        "c-context-window"
+      ],
+      "unlocks": [
+        "c-pretraining-vs-posttraining"
+      ],
+      "oneLiner": "Put a few worked examples in the context and the model continues the pattern. No weights change; the pattern is picked up from the window.",
+      "explanation": "Type \"Monday, Tuesday, Wednesday,\" and the keyboard offers \"Thursday\" — it has picked up the pattern from what is in front of it. A few-shot prompt is that at scale: ten English-to-Korean word pairs, then an English word, and the base model continues with the Korean. Nothing was learned in the training sense; the knobs are frozen. The pattern is inferred from the context and used for this one completion. This is exactly what the examples in a system prompt do: they are not instructions the model \"follows\", they are a pattern the model completes. It is also why a base model can be coaxed into acting like an assistant just by showing it a transcript of one.",
+      "wrongVersion": {
+        "claim": "In-context learning means the model learns from the conversation and keeps it.",
+        "tell": "confuses pattern completion inside the window with training"
+      },
+      "anchors": [
+        {
+          "src": "7xTGNNLPyMI",
+          "t": 3368,
+          "quote": "few shot prompt so what it is here is that I have 10 words or 10 pairs"
+        },
+        {
+          "src": "7xTGNNLPyMI",
+          "t": 3434,
+          "quote": "context learning ability and it is done by constructing what's called a few shot prompt"
+        }
+      ],
+      "widgetHint": null
+    },
+    {
+      "id": "c-pretraining-vs-posttraining",
+      "title": "Pretraining vs post-training",
+      "aliases": [
+        "post-training",
+        "post training",
+        "sft",
+        "supervised fine-tuning",
+        "fine-tuning",
+        "assistant",
+        "conversations dataset",
+        "is there something called training",
+        "stages"
+      ],
+      "prereqs": [
+        "c-base-model",
+        "c-in-context-learning"
+      ],
+      "unlocks": [
+        "c-hallucination",
+        "c-tool-use",
+        "c-refusal-learned-signal"
+      ],
+      "oneLiner": "There are two stages, not three. Pretraining on the internet makes a base model; post-training on conversations makes an assistant. \"Training\" is not a separate middle step.",
+      "explanation": "The keyboard's factory tuning is pretraining: months on the whole pile, producing a base model that continues text. Post-training is a short second pass on a much smaller, hand-built dataset of conversations — human turn, assistant turn — so the same model learns to continue a conversation in the assistant's voice rather than continue a web page. The mechanism is identical: next-token prediction with the loss driving the knobs. Only the data changes. So when KB's notes ask whether there is a stage called \"training\" between pretraining and the base model: no. Pretraining is the training; the base model is its output; post-training is more training on different data. The human-labelled conversations are not the model's knowledge, they are its manners.",
+      "wrongVersion": {
+        "claim": "Pretraining → training → base model → post-training.",
+        "tell": "KB's 9 Sept note lists four stages; there are two"
+      },
+      "anchors": [
+        {
+          "src": "7xTGNNLPyMI",
+          "t": 3662,
+          "quote": "how we can get our model to not sample internet documents but to give answers to questions"
+        },
+        {
+          "src": "7xTGNNLPyMI",
+          "t": 3679,
+          "quote": "when a human says what is 2 plus2 the assistant should re respond"
+        }
+      ],
+      "widgetHint": null
+    },
+    {
+      "id": "c-hallucination",
+      "title": "Hallucination",
+      "aliases": [
+        "hallucination",
+        "hallucinate",
+        "makes stuff up",
+        "confabulation",
+        "confident wrong"
+      ],
+      "prereqs": [
+        "c-knowledge-in-weights",
+        "c-pretraining-vs-posttraining"
+      ],
+      "unlocks": [
+        "c-refusal-learned-signal",
+        "c-tool-use"
+      ],
+      "oneLiner": "A hallucination is the model doing its normal job — producing a plausible continuation — when the true continuation is not something it knows.",
+      "explanation": "Ask the keyboard to finish \"The capital of Freedonia is\" and it will offer a word, because offering a word is all it does. It has no way to say the country is fictional. An LLM's hallucination is the same: the training data was full of confident answers to \"who is X\", so the model produces a confident answer to \"who is X\" even when X is nobody. It is not lying and it is not malfunctioning; the weights make an answer-shaped continuation likely, and nothing in the loss ever rewarded \"I don't know\". Post-training can add that option, but only by putting examples of it in the data — which raises the question of how the model knows when to use them.",
+      "wrongVersion": {
+        "claim": "Hallucination is a bug that better models will fix.",
+        "tell": "treats it as an error mode rather than the default behaviour"
+      },
+      "anchors": [
+        {
+          "src": "7xTGNNLPyMI",
+          "t": 4847,
+          "quote": "hallucinations so you might be familiar with model hallucinations it's when llms make stuff up"
+        },
+        {
+          "src": "7xTGNNLPyMI",
+          "t": 3349,
+          "quote": "what's called hallucination the model is just taking its best guess"
+        }
+      ],
+      "widgetHint": null
+    },
+    {
+      "id": "c-refusal-learned-signal",
+      "title": "How a model learns to say \"I don't know\"",
+      "aliases": [
+        "i don't know",
+        "refusal",
+        "knowledge boundary",
+        "self knowledge",
+        "probe the model",
+        "llm judge",
+        "does it know that it doesn't know"
+      ],
+      "prereqs": [
+        "c-hallucination",
+        "c-knowledge-in-weights"
+      ],
+      "unlocks": [
+        "c-tool-use"
+      ],
+      "oneLiner": "It does not know what it does not know. It learns a correlate: an internal state that tends to be present when it is guessing, and training pairs that state with the words \"I don't know\".",
+      "explanation": "The honest answer to KB's question — how does it know the next question is one it doesn't know — is that it does not, not directly. Here is what actually happens. Take a fact from Wikipedia, generate questions about it, ask the model several times, and use a second model as judge to see whether the answers are right. Where the model is consistently wrong, add training examples whose correct answer is \"I don't know\". The model already has, somewhere in its activations, a signal that correlates with uncertainty — Karpathy says the network has a decent model of its own self-knowledge. Post-training teaches it to route that signal to the refusal words. So it is not a list of unknown facts; it is a learned habit: when the inside feels like guessing, say so. It is a correlate, which is why it is imperfect in both directions. The keyboard equivalent: it cannot know a word is not in your vocabulary, but it can learn that when its top three suggestions are all weak, offering nothing beats offering junk.",
+      "wrongVersion": {
+        "claim": "We build a dataset of things it doesn't know, so it can check new questions against that list.",
+        "tell": "KB's 9 Sept doubt frames it as spaced-repetition-style lookup; it is a learned signal, not a list"
+      },
+      "anchors": [
+        {
+          "src": "7xTGNNLPyMI",
+          "t": 5190,
+          "quote": "interrogate the model to figure out what it knows and doesn't know to figure out sort of like the boundary of its knowledge"
+        },
+        {
+          "src": "7xTGNNLPyMI",
+          "t": 5221,
+          "quote": "actually have a pretty good model of its self knowledge inside the network"
+        },
+        {
+          "src": "7xTGNNLPyMI",
+          "t": 5370,
+          "quote": "we can use another llm judge to check if that is correct"
+        }
+      ],
+      "widgetHint": null
+    },
+    {
+      "id": "c-tool-use",
+      "title": "Tool use is trained, not wired",
+      "aliases": [
+        "tools",
+        "tool use",
+        "web search",
+        "code interpreter",
+        "function calling",
+        "refresh memory",
+        "how do you tell the model to use tools"
+      ],
+      "prereqs": [
+        "c-refusal-learned-signal",
+        "c-context-window"
+      ],
+      "unlocks": [],
+      "oneLiner": "A tool call is just special tokens the model learned to emit; the result is pasted back into the context, where it becomes working memory.",
+      "explanation": "Suppose the keyboard could type a special piece — search: — and whatever came back got inserted into the message for it to keep reading. That is tool use. There is no separate tool-calling machinery inside the model. In post-training, conversations include examples where the assistant emits a search token with a query, a system outside the model runs the search, and the results are appended to the context. The model learns, from those examples, when emitting the token tends to be right. The payoff is the knowledge distinction again: instead of a vague recollection from the weights, the answer is now text in the context window, which the model can read directly. KB's note asked how you tell the model to use tools; the answer is the same as everything else in post-training — you show it.",
+      "wrongVersion": {
+        "claim": "The model has built-in access to the web.",
+        "tell": "expects search to be a capability rather than a learned token plus an external loop"
+      },
+      "anchors": [
+        {
+          "src": "7xTGNNLPyMI",
+          "t": 5618,
+          "quote": "we can do that by introducing tools uh for the models"
+        },
+        {
+          "src": "7xTGNNLPyMI",
+          "t": 5712,
+          "quote": "so that text from the web search is now inside the context window that will feed into the neural network"
+        }
+      ],
+      "widgetHint": null
+    },
+    {
+      "id": "c-model-release",
+      "title": "What releasing a model means",
+      "aliases": [
+        "release",
+        "open weights",
+        "model release",
+        "github",
+        "weights file",
+        "where are the tokens",
+        "code and parameters"
+      ],
+      "prereqs": [
+        "c-parameters-weights",
+        "c-base-model"
+      ],
+      "unlocks": [],
+      "oneLiner": "A release is two things: the code that describes the formula, and the file of parameter values. The tokenizer is part of the code. No text is shipped.",
+      "explanation": "Shipping a trained keyboard means shipping the formula (a few hundred lines describing the architecture) and the knob settings (a large file of numbers). Karpathy points at GPT-2's repository: the Python that lays out the sequence of operations, plus the weights. KB's doubt was where the tokens are in that release. They are not; the training text is gone. What ships is the tokenizer — a small piece of code plus its vocabulary table — which knows how to turn any new text into ids and ids back into text, the same way the model saw during training. That is enough: new input goes through the same chopping, the same formula, the same knobs. The knowledge is in the numbers, not in any stored text.",
+      "wrongVersion": {
+        "claim": "The release must include the tokens somewhere so the model can look up new words.",
+        "tell": "KB's 9 Sept doubt; the tokenizer is code plus a vocabulary table, not the training data"
+      },
+      "anchors": [
+        {
+          "src": "7xTGNNLPyMI",
+          "t": 2650,
+          "quote": "what is a model release what does it look like to release these models"
+        },
+        {
+          "src": "7xTGNNLPyMI",
+          "t": 2660,
+          "quote": "you need two things basically to release model number one we need the um python code"
+        }
+      ],
+      "widgetHint": null
+    },
+    {
+      "id": "c-embedding",
+      "title": "Token vs vector vs embedding",
+      "aliases": [
+        "embedding",
+        "embeddings",
+        "vector",
+        "token embedding",
+        "lookup table",
+        "meaning",
+        "representation",
+        "id to vector"
+      ],
+      "prereqs": [
+        "c-tokenization",
+        "c-parameters-weights"
+      ],
+      "unlocks": [],
+      "oneLiner": "A token is an id. An embedding is the row of numbers that id looks up in a learned table. That vector is where meaning starts, and the transformer keeps reshaping it as it reads the context.",
+      "explanation": "The keyboard's dictionary gives each piece a seat number. The seat number means nothing by itself. Attached to every seat is a row of numbers — the embedding — and those numbers were tuned during training so that pieces used in similar ways end up with similar rows. That table is the first thing a token id meets: id in, vector out. From then on the model works only with vectors. Each layer of the transformer updates the vector for a position based on the vectors around it, so the same word in two sentences ends up with two different vectors by the end. So: token = id, embedding = the learned starting vector for that id, and the vectors inside the model = that starting point, revised by context. KB's 7 Sept note had this right at a high level; the piece that makes it concrete is that the table is just parameters, learned like every other knob.",
+      "wrongVersion": {
+        "claim": "An embedding is the token's meaning, fixed.",
+        "tell": "treats the vector as static rather than revised by context at every layer"
+      },
+      "anchors": [
+        {
+          "src": "kCc8FmEb1nY",
+          "t": 1389,
+          "quote": "here in the Constructor we are creating a token embedding table"
+        },
+        {
+          "src": "kCc8FmEb1nY",
+          "t": 1410,
+          "quote": "refer to this embedding table and it's going to pluck out a row of that embedding"
+        }
+      ],
+      "widgetHint": "embedding-neighbours"
+    }
+  ]
+}
