@@ -68,6 +68,7 @@ scripts/
   quote.mjs                   find real quotes: `quote.mjs <videoId> grep "phrase"` / `at mm:ss`
   transcript.mjs              fetch a video's captions into site/transcripts/
   bench.mjs                   run KB's real doubts through candidate models (needs a key)
+  benchmarks.mjs              OpenRouter's benchmark aggregate joined to live prices (needs a key)
   export.mjs                  pull a session (notes + replies) from KV into sessions/
 tests/                        node --test; the contract test greps the renderer
 sessions/                     exported session logs — the input to the class-notes artifact
@@ -98,7 +99,9 @@ all four in the same commit.
 ## Models
 
 Defaults in `desk/models.js`, chosen 2026-09-10 from the OpenRouter catalogue
-by price, context and reasoning/tools flags. **Not yet benchmarked.** Run
+by price, context and reasoning/tools flags. **Not yet benchmarked.** `OPENROUTER_API_KEY=… npm run benchmarks moonshotai z-ai deepseek` prints
+OpenRouter's own price/quality table (Artificial Analysis indices) for those
+families — the endpoint needs a key, the catalogue does not. Then run
 `OPENROUTER_API_KEY=… npm run bench composer a/model b/model` and read the
 replies; `bench checker` scores the claim-checker against notes with known
 verdicts. Override per job without a code change:
