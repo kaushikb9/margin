@@ -53,7 +53,7 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': 
 const fmt = t => { t = Math.max(0, Math.floor(t || 0)); const h = Math.floor(t / 3600), m = Math.floor((t % 3600) / 60), s = t % 60; return (h ? `${h}:${String(m).padStart(2, '0')}` : String(m)) + ':' + String(s).padStart(2, '0'); };
 const yt = t => `https://www.youtube.com/watch?v=${videoId}&t=${Math.floor(t)}s`;
 const day = iso => { const d = new Date(iso); return `${d.getDate()} ${d.toLocaleString('en-GB', { month: 'long' })} ${d.getFullYear()}`; };
-const dayShort = iso => { const d = new Date(iso); return `${String(d.getDate()).padStart(2, '0')} ${d.toLocaleString('en-GB', { month: 'short' })}`; };
+const dayShort = iso => { const d = new Date(iso); return `${String(d.getDate()).padStart(2, '0')} ${d.toLocaleString('en-GB', { month: 'short' }).slice(0, 3)}`; };  // 'Sep', like the hand rows; newer ICU says 'Sept'
 const monthOf = iso => { const d = new Date(iso); return `${d.toLocaleString('en-GB', { month: 'long' })} ${d.getFullYear()}`; };
 const isQuestion = s => /\?\s*$|^(how|why|what|when|where|which|who|is|are|does|do|did|can|could|would|should|will)\b/i.test(s.trim());
 const TA = ['answer', 'deeper', 'check', 'widget'];
