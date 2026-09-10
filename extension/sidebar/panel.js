@@ -198,7 +198,13 @@ const lastSubstantive = id => [...repliesFor(id)].reverse().find(r => ['answer',
 
 // ---------- render ----------
 function status(msg) { for (const id of ['deskStatus', 'mainStatus']) { const e = $(id); if (e) e.textContent = msg; } }
+const drafts = {};                            // note id → unsent follow-up text, survives re-renders
+function typing() { const a = document.activeElement; return a && a.tagName === 'TEXTAREA' && a.id !== 'jot' && $('queue').contains(a); }
 function render() {
+  // The page poll ticks every 2s. While KB is typing in a reply or an edit
+  // box, rebuilding the queue would throw the cursor out: update the clock
+  // and nothing else until the box loses focus.
+  if (typing()) { $('srcTime').textContent = fmt(page.t || 0); return; }
   const onSource = Boolean(page.videoId);
   $('noaccess').hidden = hasAccess || view === 'settings';
   $('offsource').hidden = onSource || !hasAccess || view === 'settings';
@@ -231,6 +237,7 @@ function renderNote(n) {
   const body = el('div');
   if (editing && editing.id === n.id) {
     const ta = el('textarea', 'edit'); ta.value = editing.text; ta.rows = 2;
+    ta.oninput = () => { editing.text = ta.value; };
     ta.onkeydown = e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); editNote(n, ta.value); } if (e.key === 'Escape') { editing = null; render(); } };
     body.appendChild(ta); body.appendChild(el('p', 'hint', 'Enter saves, Escape cancels. The replies stay as they are.'));
     setTimeout(() => ta.focus(), 0);
@@ -335,8 +342,10 @@ function renderReply(n, r) {
 // buttons for either; it just takes a little longer.
 function renderFollowUp(n) {
   const box = el('div', 'followup');
-  const ta = el('textarea'); ta.rows = 1; ta.placeholder = 'Reply… Enter sends.';
-  ta.onkeydown = e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); const v = ta.value.trim(); if (v) { ta.value = ''; ask('answer', n, { followUp: v }); } } };
+  const ta = el('textarea'); ta.rows = 1; ta.placeholder = 'Reply… or ask to be shown. Enter sends.';
+  ta.value = drafts[n.id] || '';
+  ta.oninput = () => { drafts[n.id] = ta.value; };
+  ta.onkeydown = e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); const v = ta.value.trim(); if (v) { ta.value = ''; delete drafts[n.id]; ask('answer', n, { followUp: v }); } } };
   box.appendChild(ta);
   return box;
 }
