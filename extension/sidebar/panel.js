@@ -35,6 +35,9 @@ let settings = { deskUrl: '', token: '' };
 let page = { videoId: null, t: 0, title: '', playing: false };
 let session = { notes: [], replies: [] };   // for page.videoId
 let open = new Set();                        // expanded note ids
+let menu = null;                             // note id whose edit/delete row is showing
+let editing = null;                          // {id, text} while a note is being edited
+let confirmDelete = null;                    // note id after the first press of Delete
 let view = 'main';                           // main | settings
 let tabId = null;
 let tick = null;
@@ -177,6 +180,21 @@ async function star(n, id) {
   n.stars = [...set]; await saveSession(); render(); await pushNote(n);
 }
 const starred = (n, id) => (n.stars || []).includes(id);
+// Edit fixes the words of a note you wrote. It never re-asks the TA: the
+// replies stay as they were. Delete removes the note and everything under it.
+async function editNote(n, text) {
+  text = text.replace(/\s+/g, ' ').trim(); if (!text || text === n.text) { editing = null; render(); return; }
+  n.text = text; editing = null; menu = null; await saveSession(); render(); await pushNote(n);
+}
+async function deleteNote(n) {
+  session.notes = session.notes.filter(x => x.id !== n.id);
+  session.replies = session.replies.filter(r => r.noteId !== n.id);
+  open.delete(n.id); menu = null; confirmDelete = null;
+  await saveSession(); render();
+  if (!haveDesk()) return;
+  try { await desk(`/api/notes?source=${encodeURIComponent(page.videoId)}&id=${encodeURIComponent(n.id)}`, { method: 'DELETE' }); }
+  catch (e) { status(`desk: ${e.message}`); }
+}
 const lastSubstantive = id => [...repliesFor(id)].reverse().find(r => ['answer', 'deeper', 'check'].includes(r.kind));
 
 // ---------- render ----------
@@ -211,9 +229,22 @@ function renderNote(n) {
   const meta = el('p', 'meta'); meta.appendChild(el('span', 'avatar', 'K')); meta.appendChild(el('b', null, 'Kaushik')); meta.appendChild(document.createTextNode(` · ${ago(n.createdAt)}`));
   if (open.has(n.id)) { const at = el('button', 'at', `at ${fmt(n.t)}`); at.title = 'Jump the lecture to this moment'; at.onclick = () => seek(n.t); meta.appendChild(at); }
   const st = el('button', 'star' + (starred(n, 'note') ? ' on' : ''), starred(n, 'note') ? '★' : '☆'); st.title = 'Star: a thing to remember'; st.onclick = () => star(n, 'note'); meta.appendChild(st);
+  const more = el('button', 'more', '⋯'); more.title = 'Edit or delete'; more.onclick = () => { menu = menu === n.id ? null : n.id; confirmDelete = null; render(); }; meta.appendChild(more);
   row.appendChild(meta);
   const body = el('div');
-  body.appendChild(el('p', 'txt', n.text));
+  if (editing && editing.id === n.id) {
+    const ta = el('textarea', 'edit'); ta.value = editing.text; ta.rows = 2;
+    ta.onkeydown = e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); editNote(n, ta.value); } if (e.key === 'Escape') { editing = null; render(); } };
+    body.appendChild(ta); body.appendChild(el('p', 'hint', 'Enter saves, Escape cancels. The replies stay as they are.'));
+    setTimeout(() => ta.focus(), 0);
+  } else body.appendChild(el('p', 'txt', n.text));
+  if (menu === n.id && !(editing && editing.id === n.id)) {
+    const acts = el('div', 'acts');
+    const ed = el('button', null, 'Edit'); ed.onclick = () => { editing = { id: n.id, text: n.text }; render(); }; acts.appendChild(ed);
+    if (confirmDelete === n.id) { const d = el('button', 'danger', 'Delete this note and everything under it'); d.onclick = () => deleteNote(n); acts.appendChild(d); }
+    else { const d = el('button', null, 'Delete'); d.onclick = () => { confirmDelete = n.id; render(); }; acts.appendChild(d); }
+    body.appendChild(acts);
+  }
   const replies = repliesFor(n.id);
   if (n.pending) body.appendChild(el('p', 'pending', n.pending === 'answer' ? 'Answering…' : n.pending === 'check' ? 'Reading…' : n.pending === 'deeper' ? 'Thinking…' : 'Building…'));
   if (replies.length && !open.has(n.id)) {
