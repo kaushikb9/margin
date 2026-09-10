@@ -7,7 +7,8 @@
    "duration": 12679.5,
    "chapters": 24,
    "segments": 5761,
-   "blurb": "Andrej Karpathy's general-audience walk through how ChatGPT is trained and run: pretraining, tokens, the base model, post-training, hallucination, tools and RL."
+   "blurb": "A general-audience walk through how ChatGPT is trained and run: pretraining, tokens, the base model, post-training, hallucination, tools and RL.",
+   "by": "Andrej Karpathy"
   },
   {
    "id": "kCc8FmEb1nY",
@@ -16,7 +17,8 @@
    "duration": 6978.5,
    "chapters": 30,
    "segments": 2955,
-   "blurb": "Andrej Karpathy builds a small GPT from a blank file: bigram, attention, the transformer block, and training it on Shakespeare."
+   "blurb": "A small GPT built from a blank file: bigram, attention, the transformer block, and training it on Shakespeare.",
+   "by": "Andrej Karpathy"
   }
  ]
 }

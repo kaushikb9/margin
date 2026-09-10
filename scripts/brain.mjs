@@ -151,10 +151,12 @@ ${(n.replies || []).map(r => replyHtml(r, n)).filter(Boolean).map(h => '    ' + 
 const statements = notes.filter(n => !isQuestion(n.text));
 const questions = notes.length - statements.length;
 const corrected = statements.filter(n => lastCheck(n) && !n.overruled).length;
-// The source: the video, with a one-line blurb when the brain knows it.
-let blurb = '';
-try { blurb = JSON.parse(readFileSync(join(root, 'site/brain/sources.json'), 'utf8')).sources.find(x => x.id === videoId)?.blurb || ''; } catch { /* none */ }
-const sourceHtml = `<a href="https://www.youtube.com/watch?v=${videoId}">${esc(title)}</a> on YouTube${blurb ? '. ' + esc(blurb) : ''}`;
+// The source: one line of what it is (the summary), then where it is.
+let src = {};
+try { src = JSON.parse(readFileSync(join(root, 'site/brain/sources.json'), 'utf8')).sources.find(x => x.id === videoId) || {}; } catch { /* none */ }
+const dur = tx?.segments?.at(-1)?.t; const durText = dur ? (dur >= 3600 ? `${Math.floor(dur / 3600)}h${String(Math.round((dur % 3600) / 60)).padStart(2, '0')}` : `${Math.round(dur / 60)} min`) : '';
+const summaryHtml = esc(src.blurb || `Notes in the margin of ${title}.`);
+const sourceHtml = [`<a href="https://www.youtube.com/watch?v=${videoId}">Watch on YouTube</a>`, ...[durText, src.by].filter(Boolean).map(esc)].join(' · ');
 
 const html = `<!doctype html>
 <html lang="en">
@@ -173,7 +175,8 @@ const html = `<!doctype html>
 <header>
   <div class="date">Last added ${esc(day(lastDate))} · from ${esc(day(firstDate))}</div>
   <h1>${esc(title)}</h1>
-  <p class="summary">${sourceHtml}</p>
+  <p class="summary">${summaryHtml}</p>
+  <p class="source">${sourceHtml}</p>
 </header>
 
 <div class="keep">
