@@ -100,15 +100,19 @@ all four in the same commit.
 
 ## Models
 
-Defaults in `desk/models.js`, chosen 2026-09-10 from the OpenRouter catalogue
-by price, context and reasoning/tools flags. **Not yet benchmarked.** `OPENROUTER_API_KEY=… npm run benchmarks moonshotai z-ai deepseek` prints
-OpenRouter's own price/quality table (Artificial Analysis indices) for those
-families — the endpoint needs a key, the catalogue does not. Then run
-`OPENROUTER_API_KEY=… npm run bench composer a/model b/model` and read the
-replies; `bench checker` scores the claim-checker against notes with known
-verdicts. Override per job without a code change:
-`TA_MODEL_COMPOSER`, `TA_MODEL_CHECKER`, `TA_MODEL_DEEPER`, `TA_MODEL_WIDGET`,
-and `TA_FALLBACK_<JOB>` as a comma list.
+Defaults in `desk/models.js`, chosen 2026-09-10 from `npm run benchmarks`
+(OpenRouter's Artificial Analysis aggregate, joined to live prices): **GLM 5.3
+Flash** for composer, checker and widget (41.9 intel / 71.5 code at
+$0.15/$0.50 per M — near full GLM 5.3 at a tenth of the price), **GLM 5.3**
+for the deeper pass. Fallbacks are cross-family (DeepSeek V4, Qwen, Kimi) so
+one provider's outage does not take the desk down. No GPT or Claude family
+anywhere, by KB's rule.
+
+Replies have not yet been read side by side: run
+`OPENROUTER_API_KEY=… npm run bench composer z-ai/glm-5.3-flash deepseek/deepseek-v4-flash`
+and `bench checker` once, and read them. Override per job without a code
+change: `TA_MODEL_COMPOSER`, `TA_MODEL_CHECKER`, `TA_MODEL_DEEPER`,
+`TA_MODEL_WIDGET`, and `TA_FALLBACK_<JOB>` as a comma list.
 
 ## Install in Zen
 
