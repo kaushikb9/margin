@@ -37,6 +37,7 @@ test('the renderer mentions every field it is expected to show', () => {
   const fields = new Set([...ANSWER_FIELDS, ...CHECK_FIELDS, ...DEEPER_EXTRA_FIELDS, ...WIDGET_FIELDS]);
   for (const f of fields) assert.ok(new RegExp(`\\b${f}\\b`).test(panel), `panel.js never reads ${f}`);
   for (const kind of REPLY_KINDS) assert.ok(panel.includes(`'${kind}'`), `panel.js has no branch for reply kind ${kind}`);
+  assert.ok(/\btext\b/.test(panel), 'panel.js never reads a follow-up\'s text');
   for (const kind of [...WIDGET_INPUT_KINDS, ...WIDGET_OUTPUT_KINDS]) assert.ok(runtime.includes(`'${kind}'`), `runtime.html cannot render ${kind}`);
 });
 

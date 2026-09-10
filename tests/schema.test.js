@@ -4,7 +4,7 @@ import { validateAnswer, validateCheck, validateDeeper, validateWidget, validate
 
 const K = new Set(['c-tokenization']);
 const S = new Set(['7xTGNNLPyMI']);
-const good = { concept: 'c-tokenization', title: 'Tokenization', body: 'Your keyboard does not think in letters. It chops what you type into pieces from a fixed dictionary and gives each piece a seat number. That is all the model ever sees, which is why cost is counted in tokens.', cites: [{ src: '7xTGNNLPyMI', t: 913 }], widgetHint: null };
+const good = { enough: true, concept: 'c-tokenization', title: 'Tokenization', body: 'Your keyboard does not think in letters. It chops what you type into pieces from a fixed dictionary and gives each piece a seat number. That is all the model ever sees, which is why cost is counted in tokens.', cites: [{ src: '7xTGNNLPyMI', t: 913 }], widgetHint: null };
 
 test('extractJson survives fences and prose', () => {
   assert.deepEqual(extractJson('Sure! ```json\n{"a":1}\n```'), { a: 1 });
@@ -22,6 +22,7 @@ test('answer: rejects unknown concept, missing cite, lists, length', () => {
   assert.match(validateAnswer({ ...good, body: good.body + '\n- a bullet' }, { knownConcepts: K }).error, /no headings or bullet/);
   assert.match(validateAnswer({ ...good, body: 'word '.repeat(200) }, { knownConcepts: K }).error, /limit 170/);
   assert.match(validateAnswer({ ...good, cites: [{ src: 'x', t: 1 }] }, { knownConcepts: K, knownSources: S }).error, /unknown source/);
+  assert.match(validateAnswer({ ...good, enough: 'yes' }, { knownConcepts: K }).error, /enough/);
 });
 
 test('check: ok needs nothing else; check needs the right-version-first rule', () => {
@@ -60,6 +61,6 @@ test('widget outputs: compute result is checked per kind', () => {
 
 test('normalise maps the aliases models drift to', async () => {
   const { normalise } = await import('../desk/schema.js');
-  const r = validateAnswer(normalise({ id: 'c-tokenization', title: 'T', text: good.body, citations: [{ src: '7xTGNNLPyMI', t: 913 }], widgetHint: null }), { knownConcepts: K, knownSources: S });
+  const r = validateAnswer(normalise({ id: 'c-tokenization', title: 'T', text: good.body, citations: [{ src: '7xTGNNLPyMI', t: 913 }], widgetHint: null, enough: true }), { knownConcepts: K, knownSources: S });
   assert.ok(r.ok, r.error); assert.equal(r.value.concept, 'c-tokenization');
 });

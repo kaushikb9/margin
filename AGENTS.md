@@ -10,10 +10,15 @@ npm run deploy     # only when KB asks
 ```
 
 margin is a Firefox sidebar that sits beside a YouTube lecture. (Named 2026-09-10; was "ta". The assistant that replies is still called the TA; `TA_*` env names, `x-ta-token` and the `TA_KV` binding are unchanged.) KB jots notes as
-he watches; nothing interrupts. A note tagged `#doubt` gets an answer, every
-note gets checked against a **precomputed concept brain**, and each reply
-lands as one muted line under the note. A break is optional: a deeper pass
-over every note, and the building of any widget that was asked for.
+he watches; nothing interrupts. A note with **Ask the TA** ticked gets an
+answer; every note gets the silent check against a **precomputed concept
+brain**, which speaks only when a claim contradicts the lecture. Each reply
+lands as one muted line under the note. A thread is a conversation: a
+follow-up is answered with the thread in view, and when the notes are not
+enough the desk escalates to the reasoning model on its own (`enough: false`
+from the composer). *Poke at it* builds a widget on press. There is no
+break, no session, no end: the brain post is regenerated from whatever is
+in KV.
 
 Built 2026-09-10 from `~/Code/learn/learn-app-plan.md` and the mockup at
 https://claude.ai/code/artifact/0aaa12e2-4d34-48f3-b630-37c859c4e73c (titled "TA" — the name changed after). The
@@ -170,8 +175,9 @@ page — the desk is a key-holder, a notebook and a sandbox, not a site.
   `sidebar_action` is Firefox's.
 - Writing to the tracker artifact db from the extension. The clipboard
   digest is the coupling.
-- Chapter-end break prompts, badges, unread counts, sounds. The panel never
-  speaks first.
+- A break view, "go deeper on all", an end-session button, tags, a "not
+  convinced" button — all cut on 2026-09-10 as redundant with the thread
+  model and the brain post. Chapter-end prompts, badges, sounds: never.
 - **Surfacing closed sessions in brain.kaushikbhat.com.** KB's parked todo
   (2026-09-10): the brain repo restructured as plan (optional) → topic
   (video/paper/essay) → session, with the notes page under it. Needs its own

@@ -50,7 +50,7 @@ test('a model that returns junk once is retried, then a fallback is used', async
     const body = JSON.parse(init.body); calls.push(body.model);
     const content = calls.length < 3
       ? 'not json at all'
-      : JSON.stringify({ concept: 'c-knowledge-in-weights', title: 'Knowledge in weights', body: 'Your keyboard has no list of your sentences in it. It has numbers that were nudged until its guesses got good. Nothing is stored and looked up; the weights make true continuations likely.', cites: [{ src: '7xTGNNLPyMI', t: 3088 }], widgetHint: null });
+      : JSON.stringify({ concept: 'c-knowledge-in-weights', title: 'Knowledge in weights', body: 'Your keyboard has no list of your sentences in it. It has numbers that were nudged until its guesses got good. Nothing is stored and looked up; the weights make true continuations likely.', cites: [{ src: '7xTGNNLPyMI', t: 3088 }], widgetHint: null, enough: true });
     return new Response(JSON.stringify({ choices: [{ message: { content } }], model: body.model }), { status: 200 });
   };
   const jot = { id: 'n1', text: 'world knowledge stored in the parameters - what? how?', tags: ['#doubt'], t: 5354 };
@@ -66,4 +66,13 @@ test('a transport error moves to the next model without retrying', async () => {
   const jot = { id: 'n3', text: 'tokens are ids', tags: [], t: 913 };
   const r = await check({ brain, transcripts, jot, source, t: 913, env: { OPENROUTER_API_KEY: 'k', TA_MODEL_CHECKER: 'a/one', TA_FALLBACK_CHECKER: 'b/two' }, fetchImpl });
   assert.ok(r.ok); assert.deepEqual(calls, ['a/one', 'b/two']);
+});
+
+test('a follow-up in the thread escalates to the deeper pass on its own', async () => {
+  const jot = { id: 'n1', text: 'world knowledge stored in the parameters - what? how?', tags: ['#doubt'], t: 5354 };
+  const thread = [{ kind: 'answer', body: 'first try' }, { kind: 'you', text: 'but why would a compression produce true sentences at all?' }];
+  const r = await answer({ brain, transcripts, jot, source, t: 5354, thread, env });
+  assert.ok(r.ok, r.error);
+  assert.equal(r.escalated, true);
+  assert.equal(typeof r.value.changed, 'boolean');
 });

@@ -7,10 +7,13 @@
 export const CONTRACT_VERSION = 1;
 
 // A reply the TA posts under a note. `kind` says what it is.
-export const REPLY_KINDS = ['answer', 'check', 'deeper', 'widget', 'error'];
+export const REPLY_KINDS = ['you', 'answer', 'check', 'deeper', 'widget', 'error'];
+// 'you' is KB's follow-up inside a thread; the desk stores it and answers it.
 
 // answer / deeper — one concept, in KB's framing, with anchors.
-export const ANSWER_FIELDS = ['concept', 'title', 'body', 'cites', 'widgetHint'];
+export const ANSWER_FIELDS = ['concept', 'title', 'body', 'cites', 'widgetHint', 'enough'];
+// enough: false means the notes did not cover it; the desk escalates to the
+// reasoning pass on its own and the panel shows that reply instead.
 // check — a note that contradicts the brain. verdict "ok" renders nothing.
 export const CHECK_FIELDS = ['verdict', 'claim', 'correction', 'cites', 'concept'];
 // deeper adds these to ANSWER_FIELDS.

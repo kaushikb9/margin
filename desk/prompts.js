@@ -14,22 +14,26 @@ const noteBlock = n => [
 
 const VOICE = `Voice: plain, short sentences, no headings, no bullet points, no em dashes. Simple everyday examples at the level of a CS graduate — never payments, never enterprise. Use the running example the notes use (the phone keyboard) when it helps; do not invent a new analogy. Speak to KB directly about the thing he wrote; do not say "great question". Do not tell him he is wrong; state what is right.`;
 
-export function composerPrompt({ jot, notes, cluster, source, t, window }) {
-  const system = `You are a teaching assistant sitting beside a recorded lecture. KB jotted a note while watching. Answer it from the NOTES below and nothing else; if the notes do not cover it, say what the nearest note does say and stop. One concept only — pick the single note id that best fits and answer that. Never exceed ${LIMITS.bodyWords} words. Every number you state must appear in the NOTES; the transcript is auto-captioned and garbles numbers, so never take a figure from it.
+const threadBlock = thread => (thread || []).map(r => r.kind === 'you' ? `KB: ${r.text}` : r.kind === 'check' ? `TA (check): ${r.correction}` : `TA: ${r.body || ''}`).join('\n\n');
+
+export function composerPrompt({ jot, notes, cluster, source, t, window, thread }) {
+  const system = `You are a teaching assistant sitting beside a recorded lecture. KB jotted a note while watching${thread?.length ? ', and this is a follow-up in that thread' : ''}. Answer it from the NOTES below and nothing else. One concept only — pick the single note id that best fits and answer that. Never exceed ${LIMITS.bodyWords} words. Every number you state must appear in the NOTES; the transcript is auto-captioned and garbles numbers, so never take a figure from it.
+
+Judge your own coverage honestly. If the notes genuinely answer what KB asked, set "enough": true. If they do not — the question goes past them, or KB is following up because the earlier reply did not land — set "enough": false and still give the best short answer the notes allow; a colleague with the full transcript and more time will take it from there.
 
 Running example for this milestone: ${cluster.name}. ${cluster.thread}
 
 ${VOICE}
 
-Return ONLY a JSON object with exactly these keys — "concept", "title", "body", "cites", "widgetHint" — for example:
-{"concept": "c-tokenization", "title": "Tokenization", "body": "Your keyboard does not think in letters...", "cites": [{"src": "7xTGNNLPyMI", "t": 913}], "widgetHint": null}
+Return ONLY a JSON object with exactly these keys — "concept", "title", "body", "cites", "widgetHint", "enough" — for example:
+{"concept": "c-tokenization", "title": "Tokenization", "body": "Your keyboard does not think in letters...", "cites": [{"src": "7xTGNNLPyMI", "t": 913}], "widgetHint": null, "enough": true}
 "concept" is the id of the one note you answered from (the ### heading). Cites must come from the notes' anchors or from the transcript window timestamps; at most ${LIMITS.citesMax}. Do not use the notes' own field names; do not add keys.`;
 
   const user = `KB is watching "${source.title}" (${source.id}) and is at ${fmtTime(t)}.
 
 KB's note (${jot.tags?.length ? jot.tags.join(' ') : 'untagged'}):
 """${jot.text}"""
-
+${thread?.length ? `\nThe thread so far, oldest first:\n${threadBlock(thread)}\n` : ''}
 What the lecture says around this moment:
 """${window || '(no transcript window available)'}"""
 
@@ -60,14 +64,14 @@ ${notes.map(noteBlock).join('\n\n')}`;
   return { system, user };
 }
 
-export function deeperPrompt({ jot, prior, notes, cluster, source, t, transcript }) {
-  const system = `You are the same teaching assistant, now at a break with time to think. KB was not convinced by the earlier reply, or asked for a deeper pass. You have the lecture transcript up to this point and the prerequisite notes. Re-derive the answer from the transcript first, then check it against the notes. If the earlier reply was right, say so plainly and add the one thing that was missing. If it was wrong or incomplete, correct it. Still one concept, still under ${LIMITS.bodyWords} words, still no lists.
+export function deeperPrompt({ jot, prior, notes, cluster, source, t, transcript, thread }) {
+  const system = `You are the same teaching assistant, now with time to think. The quick reply from the notes was not enough for this one. You have the lecture transcript up to this point and the prerequisite notes. Re-derive the answer from the transcript first, then check it against the notes. If the earlier reply was right, say so plainly and add the one thing that was missing. If it was wrong or incomplete, correct it. Still one concept, still under ${LIMITS.bodyWords} words, still no lists.
 
 Running example for this milestone: ${cluster.name}. ${cluster.thread}
 
 ${VOICE}
 
-Return ONLY a JSON object: {"concept": "<note id>", "title": "...", "body": "...", "cites": [{"src": "...", "t": <seconds>}], "widgetHint": <string or null>, "changed": <true if this differs materially from the earlier reply>, "why": "<one sentence on what changed, or empty>"}.`;
+Return ONLY a JSON object: {"concept": "<note id>", "title": "...", "body": "...", "cites": [{"src": "...", "t": <seconds>}], "widgetHint": <string or null>, "enough": true, "changed": <true if this differs materially from the earlier reply>, "why": "<one sentence on what changed, or empty>"}.`;
 
   const user = `KB is watching "${source.title}" (${source.id}); the note was jotted at ${fmtTime(t)}.
 
@@ -76,7 +80,7 @@ KB's note:
 
 Earlier reply (kind: ${prior?.kind || 'none'}):
 """${prior ? (prior.body || prior.correction || '') : '(none)'}"""
-
+${thread?.length ? `\nThe thread so far, oldest first:\n${threadBlock(thread)}\n` : ''}
 Prerequisite notes:
 ${notes.map(noteBlock).join('\n\n')}
 

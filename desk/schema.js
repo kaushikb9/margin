@@ -63,7 +63,8 @@ export function validateAnswer(obj, { knownConcepts, knownSources } = {}) {
   const c = checkCites(obj.cites, knownSources); if (c) return bad('answer.' + c);
   if (obj.cites.length === 0) return bad('answer.cites: at least one anchor (every answer carries a timestamp)');
   if (obj.widgetHint !== null && typeof obj.widgetHint !== 'string') return bad('answer.widgetHint: string or null');
-  return good({ concept: obj.concept, title: obj.title.trim(), body: obj.body.trim(), cites: obj.cites, widgetHint: obj.widgetHint });
+  if (typeof obj.enough !== 'boolean') return bad('answer.enough: true or false');
+  return good({ concept: obj.concept, title: obj.title.trim(), body: obj.body.trim(), cites: obj.cites, widgetHint: obj.widgetHint, enough: obj.enough });
 }
 
 export function validateCheck(obj, { knownConcepts, knownSources } = {}) {
@@ -82,7 +83,7 @@ export function validateCheck(obj, { knownConcepts, knownSources } = {}) {
 }
 
 export function validateDeeper(obj, opts) {
-  const a = validateAnswer(obj, opts); if (!a.ok) return bad(a.error.replace(/^answer/, 'deeper'));
+  const a = validateAnswer({ enough: true, ...obj }, opts); if (!a.ok) return bad(a.error.replace(/^answer/, 'deeper'));
   for (const f of DEEPER_EXTRA_FIELDS) if (!(f in obj)) return bad(`deeper.${f}: missing`);
   if (typeof obj.changed !== 'boolean') return bad('deeper.changed: boolean');
   if (typeof obj.why !== 'string') return bad('deeper.why: string (may be empty when changed is false)');

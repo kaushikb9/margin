@@ -56,25 +56,37 @@ async function run({ kind, prompt, ctx, env, log, fetchImpl }) {
 }
 
 // Shared context for a jot: retrieval + transcript window.
-function context(brain, transcripts, { jot, source, t }) {
+function context(brain, transcripts, { jot, source, t, thread }) {
   const tx = transcripts[source.id];
-  const hits = retrieve(brain.index, { text: jot.text, src: source.id, t, k: 3 });
+  // A follow-up retrieves on the whole thread, not just the latest line.
+  const text = thread?.length ? [jot.text, ...thread.filter(r => r.kind === 'you').map(r => r.text)].join(' ') : jot.text;
+  const hits = retrieve(brain.index, { text, src: source.id, t, k: 3 });
   const notes = hits.map(h => h.note);
   const cluster = notes[0] ? brain.clusterOf.get(notes[0].id) : brain.docs[0].cluster;
   return {
-    jot, source, t, notes, hits, cluster,
+    jot, source, t, notes, hits, cluster, thread: thread || [],
     window: transcriptWindow(tx, t),
     knownConcepts: new Set(notes.map(n => n.id)),
     knownSources: new Set(Object.keys(transcripts)),
   };
 }
 
-export async function answer({ brain, transcripts, jot, source, t, env, log, fetchImpl }) {
-  const ctx = context(brain, transcripts, { jot, source, t });
+// answer: the quick pass from the notes. If the composer says the notes were
+// not enough, the desk escalates to the deeper pass on its own and returns
+// that instead — the panel never shows the insufficient one.
+export async function answer({ brain, transcripts, jot, source, t, thread, env, log, fetchImpl }) {
+  const ctx = context(brain, transcripts, { jot, source, t, thread });
   if (!ctx.notes.length) return { ok: false, error: 'nothing in the brain matches this note yet', retrieved: [] };
   const prompt = composerPrompt(ctx);
   const r = await run({ kind: 'answer', prompt, ctx, env, log, fetchImpl });
-  return { ...r, retrieved: ctx.hits.map(h => ({ id: h.note.id, score: +h.score.toFixed(3), lexical: +h.lexical.toFixed(3), prior: +h.prior.toFixed(3) })) };
+  const retrieved = ctx.hits.map(h => ({ id: h.note.id, score: +h.score.toFixed(3), lexical: +h.lexical.toFixed(3), prior: +h.prior.toFixed(3) }));
+  if (r.ok && r.value.enough === false) {
+    log?.(`answer ${jot.id}: notes not enough (${r.value.concept}); escalating to the deeper pass`);
+    const d = await deeper({ brain, transcripts, jot, prior: { kind: 'answer', ...r.value }, source, t, thread, env, log, fetchImpl });
+    if (d.ok) return { ...d, escalated: true, quick: r.value, retrieved };
+    return { ...r, retrieved, escalationFailed: d.error };
+  }
+  return { ...r, retrieved };
 }
 
 export async function check({ brain, transcripts, jot, source, t, env, log, fetchImpl }) {
@@ -85,8 +97,8 @@ export async function check({ brain, transcripts, jot, source, t, env, log, fetc
   return { ...r, retrieved: ctx.hits.map(h => h.note.id) };
 }
 
-export async function deeper({ brain, transcripts, jot, prior, source, t, env, log, fetchImpl }) {
-  const ctx = context(brain, transcripts, { jot, source, t });
+export async function deeper({ brain, transcripts, jot, prior, source, t, thread, env, log, fetchImpl }) {
+  const ctx = context(brain, transcripts, { jot, source, t, thread });
   const seed = ctx.notes.map(n => n.id);
   if (prior?.concept && brain.byId.has(prior.concept)) seed.unshift(prior.concept);
   ctx.notes = subgraph(brain.notes, seed, 8);

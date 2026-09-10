@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>margin</title>
-<link rel="stylesheet" href="panel.css?v=3">
+<link rel="stylesheet" href="panel.css?v=4">
 </head>
 <body>
 
@@ -37,24 +37,12 @@
 
   <div class="composer">
     <textarea id="jot" rows="2" placeholder="Jot a note. Enter sends." aria-label="Jot a note"></textarea>
-    <p class="hint">Enter sends. Shift-Enter for a new line. Tag after, or type <code>#doubt</code> in the note.</p>
+    <label class="ask"><input type="checkbox" id="askTa"> Ask the TA</label>
   </div>
 
   <div class="queue" id="queue"></div>
   <p class="caption" id="mainStatus"></p>
 </main>
-
-<section id="break" hidden>
-  <p class="srcline"><span class="eyebrow">Break</span> · <b id="breakTime">0:00</b></p>
-  <p class="second ink" id="breakSummary"></p>
-  <div class="sweep" id="sweep"></div>
-  <p class="second">The deeper pass re-reads every note against the transcript so far. If it changes its mind, the thread gets a second reply, never a silent edit.</p>
-  <div class="row-actions">
-    <button type="button" id="deeperAll" class="primary">Go deeper on all notes</button>
-    <button type="button" id="endSession" class="ghost">End session</button>
-  </div>
-  <p class="caption" id="breakStatus"></p>
-</section>
 
 <section id="settings" hidden>
   <p class="eyebrow">Desk</p>
@@ -69,8 +57,7 @@
 
 <footer class="side-foot">
   <span id="count"></span>
-  <button type="button" id="breakBtn" class="primary" hidden>Break</button>
-  <button type="button" id="backBtn" class="ghost" hidden>Back to the lecture</button>
+  <button type="button" id="backBtn" class="ghost" hidden>Back</button>
 </footer>
 
 <template id="tpl-widget">

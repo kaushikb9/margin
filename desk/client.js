@@ -66,6 +66,7 @@ export function mockChat({ job, ctx }) {
     case 'composer': return { content: JSON.stringify({
       concept: top.id, title: top.title, body: top.explanation.split(/(?<=\.)\s/).slice(0, 4).join(' '),
       cites: top.anchors.slice(0, 2).map(a => ({ src: a.src, t: a.t })), widgetHint: top.widgetHint,
+      enough: !(ctx.thread?.length) && !/why|really|still/i.test(ctx.jot.text),   // follow-ups and "but why" escalate in the mock
     }), usage: null, model: 'mock' };
     case 'checker': {
       const claim = ctx.jot.text.toLowerCase();
