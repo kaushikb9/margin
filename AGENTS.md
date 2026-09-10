@@ -239,6 +239,11 @@ page — the desk is a key-holder, a notebook and a sandbox, not a site.
   was never injected. `host_permissions` declares youtube.com so it appears
   under about:addons → Permissions, and the panel shows an *Allow on
   youtube.com* button (`permissions.request`) when access is missing.
+- **A render guard must protect a draft, not a focused box.** Blocking every
+  render while a queue textarea had focus hid the pending line and the
+  reply after Enter (0.2.7) and kept the edit box open after Escape. The
+  guard now holds only while a follow-up box has unsent text or an edit is
+  in progress; sending and cancelling blur first.
 - **The first render must happen even when there is no video.** After the
   poll was removed, `setPage` skipped rendering when the video was
   "unchanged" — including null→null at startup, which left a blank panel on

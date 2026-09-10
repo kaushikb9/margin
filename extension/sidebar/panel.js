@@ -212,7 +212,7 @@ function typing() {
   const a = document.activeElement;
   if (!a || a.tagName !== 'TEXTAREA' || a.id === 'jot' || !$('queue').contains(a)) return false;
   if (a.classList.contains('edit')) return editing !== null;
-  return true;
+  return a.value.trim().length > 0;   // a follow-up box only blocks while it holds unsent text
 }
 function render() {
   // The page poll ticks every 2s. While KB is typing in a reply or an edit
@@ -358,7 +358,7 @@ function renderFollowUp(n) {
   const ta = el('textarea'); ta.rows = 1; ta.placeholder = 'Reply… or ask to be shown. Enter sends.';
   ta.value = drafts[n.id] || '';
   ta.oninput = () => { drafts[n.id] = ta.value; };
-  ta.onkeydown = e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); const v = ta.value.trim(); if (v) { ta.value = ''; delete drafts[n.id]; ask('answer', n, { followUp: v }); } } };
+  ta.onkeydown = e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); const v = ta.value.trim(); if (v) { ta.value = ''; delete drafts[n.id]; ta.blur(); ask('answer', n, { followUp: v }); } } };
   box.appendChild(ta);
   return box;
 }
