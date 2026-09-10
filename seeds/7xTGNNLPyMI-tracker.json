@@ -1,0 +1,27 @@
+{
+  "source": "7xTGNNLPyMI",
+  "about": "KB's notes from the study tracker (progress/d1), 5, 7 and 9 Sept 2026, verbatim, placed at the moment in the lecture each one is about. Doubts carry #doubt; the 7 Sept temperature line carries #til as he tagged it.",
+  "notes": [
+    { "t": 130,  "tags": [], "text": "pre-training -> training -> post-training" },
+    { "t": 300,  "tags": [], "text": "datasets: scraping the internet. FineWeb: decanting the web for the finest text data at scale (huggingface.co/spaces/HuggingFaceFW/blogpost-fineweb-v1)" },
+    { "t": 700,  "tags": [], "text": "tokenisation: the process of converting some text into tokens. look like numbers but they are essentially unique ids, symbols for that text. each token can be a word, a slice of word, some words, phrase, whitespace, punctuation - anything is possible. visualised here: tiktokenizer.vercel.app" },
+    { "t": 1080, "tags": [], "text": "context - sequence of tokens. context window - maximum it can hold" },
+    { "t": 1300, "tags": [], "text": "parameters (8B parameters in Qwen / LLama is how many weights it has). used during training: similar to knobs on a DJ set. weights for the mathematical expressions which form the neural network. we keep tweaking the weights until the predictions are correct outputs" },
+    { "t": 1460, "tags": [], "text": "transformer is a type of deep learning neural network architecture. take input -> go through a transformer -> get output. neural network: bbycroft.net/llm" },
+    { "t": 1600, "tags": ["#doubt"], "text": "inference (didnt understand this much). the job of predicting the next token for any given token. token -> neural network -> (probabilities) -> sample -> next token" },
+    { "t": 1620, "tags": ["#doubt"], "text": "Token vs Vector (Embedding = a vector with a meaning/representation) — understood at a high level but not very clear. a token is just an ID, like a lookup key. It has no meaning by itself. The model then looks up that ID and gets an embedding, which is just a list of numbers. That's where meaning starts to live. Same word, different sentences, the transformer updates that list based on surrounding words" },
+    { "t": 1625, "tags": ["#til"], "text": "Temperature = how much tolerance we have with the probability. low temperature = higher accuracy" },
+    { "t": 2790, "tags": [], "text": "So what is a base model? xx parameters trained on yy tokens. Llama 3 (2024) is 405 billion parameters trained on 15 million tokens" },
+    { "t": 2655, "tags": ["#doubt"], "text": "What does releasing a model mean? is this the inference? the code for running the transformer, the parameters for the transformer" },
+    { "t": 2670, "tags": ["#doubt"], "text": "its just the parameters? where are the tokens? it needs to be somewhere as part of the release right so that whenever a new word comes in, it knows what is the relevant token for that? or is it just that there is a tokenizer function somewhere as part of the inference which knows how to encode and decode specific to that model and that's about it?" },
+    { "t": 3090, "tags": ["#doubt"], "text": "in his notes he says \"a lot of the world knowledge\" is stored in the parameters of the network - what? how?" },
+    { "t": 3370, "tags": ["#doubt"], "text": "Psychology of a base model. in context learning ability? how? — is this similar to the good/bad examples we give in the system prompt?" },
+    { "t": 3570, "tags": ["#doubt"], "text": "pre-training (data gathering and cleaning) -> training (parmeters + transformers etc .. but is there something called as training or everything is pre-training?) -> base model (internet document simulator) -> post training" },
+    { "t": 3700, "tags": ["#doubt"], "text": "the human labelled datasets is all that is there in training data sets? how is this labelled helping with the model when live? helps with in context learning?" },
+    { "t": 4850, "tags": [], "text": "hallucinations — clear. model post-training to test for facts/hallucinations" },
+    { "t": 5250, "tags": [], "text": "mitigation 1: take a para from wikipedia - ask a model (model A) to generate 3 factual Q&As from it. The answers here are correct because the information is there in the context window. ask another model (model B) those questions and see if it answers correctly. do it few times to check for correctness (LLM as a judge). if the model (model B) is giving wrong answers then in the training tell it to respond by saying that it doesnt know" },
+    { "t": 5400, "tags": ["#doubt"], "text": "we are just creating datasets to tell it when to say no. so how does it know that the next question it doesnt know the answer to is actually not in its training set? is it just a function similar to spaced repitition of types?" },
+    { "t": 5630, "tags": ["#doubt"], "text": "mitigation 2: allow usage of tools like web search. how do you tell the models to use these tools? again do via training sets" },
+    { "t": 5990, "tags": ["#key"], "text": "recap: knowledge in parameters = vague memory. knowledge in tokens of context window = working memory" }
+  ]
+}

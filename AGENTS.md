@@ -68,9 +68,11 @@ scripts/
   transcript.mjs              fetch a video's captions into site/transcripts/
   bench.mjs                   run KB's real doubts through candidate models (needs a key)
   benchmarks.mjs              OpenRouter's benchmark aggregate joined to live prices (needs a key)
+  seed.mjs                    preload notes from seeds/<file>.json and let the TA respond (idempotent)
   export.mjs                  pull a session (notes + replies) from KV into sessions/
   notes.mjs                   render a session file into class notes (notes/<video>-<date>.html)
 tests/                        node --test; the contract test greps the renderer
+seeds/                        notes to preload, e.g. KB's tracker notes for the Deep Dive
 sessions/                     exported session logs — the input to the class-notes page
 notes/                        rendered class notes (gitignored; the artifact is the copy)
 ```
