@@ -198,6 +198,10 @@ page — the desk is a key-holder, a notebook and a sandbox, not a site.
   ranked a neighbouring note above the one the jot literally named; at 0.6×
   with lexical damped by confidence, both cases pass (`tests/retrieve.test.js`
   carries KB's real doubts as the fixture).
+- **Firefox keeps extension CSS cached across a temporary-add-on reload.** A
+  stylesheet change shipped with a script change rendered as new JS in the
+  old layout. `panel.html` links `panel.css?v=N` and the css file's first
+  line carries the same N; the test fails if they differ. Bump both.
 - **The in-app browser cannot execute local files**, and hides the pane
   between calls. `npm run preview` serves the panel on :8790 with a shim for
   the extension API, and `javascript_tool` drives it; screenshots only work

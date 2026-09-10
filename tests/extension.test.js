@@ -43,3 +43,11 @@ test('widget runtime: sandboxed by CSP, listens for spec only', () => {
   const panel = read('../extension/sidebar/panel.js');
   assert.match(panel, /sandbox="allow-scripts"/.test(read('../extension/sidebar/panel.html')) ? /allow-scripts|wframe/ : /never/);
 });
+
+test('panel.css is versioned and the version changes with the file', () => {
+  const html = read('../extension/sidebar/panel.html');
+  const m = html.match(/panel\.css\?v=(\d+)/);
+  assert.ok(m, 'panel.html must link panel.css?v=N — Firefox caches extension CSS across reloads');
+  const css = read('../extension/sidebar/panel.css');
+  assert.ok(css.startsWith(`/* v${m[1]} `), `panel.css must begin with "/* v${m[1]} " so the bump is made in both places`);
+});
