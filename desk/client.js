@@ -5,8 +5,12 @@ import { SETTINGS } from './models.js';
 
 const ENDPOINT = 'https://openrouter.ai/api/v1/chat/completions';
 
+// A stalled provider must not stall the panel: every call has a deadline.
+const TIMEOUT_MS = { composer: 45000, checker: 45000, widget: 60000, deeper: 120000 };
+
 export async function chat({ model, system, user, job, env, fetchImpl = fetch, signal }) {
   const settings = SETTINGS[job] || {};
+  signal = signal || (typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(TIMEOUT_MS[job] || 45000) : undefined);
   const body = {
     model,
     messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
@@ -15,7 +19,8 @@ export async function chat({ model, system, user, job, env, fetchImpl = fetch, s
     response_format: { type: 'json_object' },
   };
   if (settings.reasoning) body.reasoning = settings.reasoning;
-  let res = await post(body);
+  let res;
+  try { res = await post(body); } catch (e) { throw new Error(`openrouter: ${model} ${e.name === 'TimeoutError' || e.name === 'AbortError' ? `timed out after ${TIMEOUT_MS[job] || 45000}ms` : e.message}`); }
   // A provider that refuses the reasoning setting gets the same request
   // without it, once. The cap already leaves room for whatever it thinks.
   if (res.status === 400 && body.reasoning) {
