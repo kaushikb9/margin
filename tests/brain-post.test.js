@@ -12,6 +12,10 @@ const can = existsSync(join(BRAIN, 'site/index.html'));
 test('brain.mjs refuses a session with nothing starred, then writes a post that passes the brain\'s check', { skip: !can && 'no ~/Code/brain on this machine' }, () => {
   const dir = mkdtempSync(join(tmpdir(), 'brain-'));
   cpSync(BRAIN, dir, { recursive: true, filter: p => !p.includes('/.git') && !p.includes('/node_modules') });
+  // Start from a brain with no margin posts: the real one may already hold
+  // this video's post, and a rerun finds it by slug (by design).
+  for (const f of readdirSync(join(dir, 'site/posts'))) if (f.includes('deep-dive-into-llms')) rmSync(join(dir, 'site/posts', f));
+  writeFileSync(join(dir, 'site/index.html'), readFileSync(join(dir, 'site/index.html'), 'utf8').replace(/\s*<!-- margin:7xTGNNLPyMI -->[\s\S]*?<!-- \/margin -->/, ''));
   const session = JSON.parse(readFileSync(join(root, 'sessions/7xTGNNLPyMI/2026-09-10.json'), 'utf8'));
   const plain = join(dir, 'plain.json'); writeFileSync(plain, JSON.stringify(session));
   const run = (file) => { try { return { code: 0, out: execFileSync('node', [join(root, 'scripts/brain.mjs'), '7xTGNNLPyMI', '--from', file], { env: { ...process.env, BRAIN_DIR: dir }, stdio: 'pipe' }).toString() }; } catch (e) { return { code: e.status, out: e.stderr.toString() }; } };
