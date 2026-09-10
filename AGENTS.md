@@ -44,7 +44,6 @@ site/                         the desk's static half (Pages output dir)
   transcripts/<videoId>.json  caption segments + chapters, fetched by scripts/transcript.mjs
   widget/runtime.html         the sandboxed widget runtime (lives here, not in the extension — see below)
   _headers                    CSP for the runtime, cache for brain/transcripts
-  index.html                  status page
 functions/
   _middleware.js              CORS + x-ta-token on /api/*
   api/health.js               open: is the desk up, which models, mock or live
@@ -149,7 +148,8 @@ npm run deploy
 ```
 
 Without `OPENROUTER_API_KEY` the desk runs the mock model and says so in
-`/api/health` and on the status page.
+`/api/health`; the sidebar's **Test** button reads it. There is no front
+page — the desk is a key-holder, a notebook and a sandbox, not a site.
 
 ## Deferred, don't build unless asked
 
