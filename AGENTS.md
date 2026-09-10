@@ -142,7 +142,7 @@ opens the lecture at that moment.
 
 ```sh
 npx wrangler kv namespace create TA_KV          # paste the id into wrangler.toml
-npx wrangler pages project create margin
+npx wrangler pages project create margin     # live at https://margin-3d0.pages.dev
 npx wrangler pages secret put OPENROUTER_API_KEY --project-name margin
 npx wrangler pages secret put TA_TOKEN --project-name margin
 npm run deploy

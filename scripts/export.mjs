@@ -2,7 +2,7 @@
 // Pull a source's session log (notes + replies) from the desk into
 // sessions/<videoId>/<date>.json. This file is the input to the class-notes
 // artifact and the durable copy of a session; KV is the live copy.
-//   TA_HOST=https://margin.pages.dev TA_TOKEN=... node scripts/export.mjs <videoId>
+//   TA_HOST=https://margin-3d0.pages.dev TA_TOKEN=... node scripts/export.mjs <videoId>
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
