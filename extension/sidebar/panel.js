@@ -187,8 +187,10 @@ const starred = (n, id) => (n.stars || []).includes(id);
 // Edit fixes the words of a note you wrote. It never re-asks the TA: the
 // replies stay as they were. Delete removes the note and everything under it.
 async function editNote(n, text) {
-  text = text.replace(/\s+/g, ' ').trim(); if (!text || text === n.text) { editing = null; render(); return; }
-  n.text = text; editing = null; menu = null; await saveSession(); render(); await pushNote(n);
+  text = text.replace(/\s+/g, ' ').trim();
+  editing = null; menu = null; document.activeElement?.blur?.();
+  if (!text || text === n.text) { render(); return; }
+  n.text = text; await saveSession(); render(); await pushNote(n);
 }
 async function deleteNote(n) {
   session.notes = session.notes.filter(x => x.id !== n.id);
@@ -203,7 +205,15 @@ const lastSubstantive = id => [...repliesFor(id)].reverse().find(r => ['answer',
 
 // ---------- render ----------
 function status(msg) { for (const id of ['deskStatus', 'mainStatus']) { const e = $(id); if (e) e.textContent = msg; } }
-function typing() { const a = document.activeElement; return a && a.tagName === 'TEXTAREA' && a.id !== 'jot' && $('queue').contains(a); }
+// A queue textarea has focus and its content is still wanted: a follow-up
+// draft, or an edit that has not been saved or cancelled. A finished edit
+// (editing === null) must not block the render that removes its box.
+function typing() {
+  const a = document.activeElement;
+  if (!a || a.tagName !== 'TEXTAREA' || a.id === 'jot' || !$('queue').contains(a)) return false;
+  if (a.classList.contains('edit')) return editing !== null;
+  return true;
+}
 function render() {
   // The page poll ticks every 2s. While KB is typing in a reply or an edit
   // box, rebuilding the queue would throw the cursor out: update the clock
@@ -241,7 +251,7 @@ function renderNote(n) {
   if (editing && editing.id === n.id) {
     const ta = el('textarea', 'edit'); ta.value = editing.text; ta.rows = 2;
     ta.oninput = () => { editing.text = ta.value; };
-    ta.onkeydown = e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); editNote(n, ta.value); } if (e.key === 'Escape') { editing = null; render(); } };
+    ta.onkeydown = e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); editNote(n, ta.value); } if (e.key === 'Escape') { editing = null; ta.blur(); render(); } };
     body.appendChild(ta); body.appendChild(el('p', 'hint', 'Enter saves, Escape cancels. The replies stay as they are.'));
     setTimeout(() => ta.focus(), 0);
   } else body.appendChild(el('p', 'txt', n.text));
