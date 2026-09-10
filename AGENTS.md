@@ -157,11 +157,12 @@ Without `OPENROUTER_API_KEY` the desk runs the mock model and says so in
   digest is the coupling.
 - Chapter-end break prompts, badges, unread counts, sounds. The panel never
   speaks first.
-- The brain-post rendering of class notes. Decided 2026-09-10: one document
-  per session, threaded notebook as the spine with a concept index on top
-  (`scripts/notes.mjs`), published as a Claude artifact so widgets run. A
-  static copy for the brain waits on KB's call about the brain's no-script
-  rule; do not write one unasked.
+- **Surfacing closed sessions in brain.kaushikbhat.com.** KB's parked todo
+  (2026-09-10): the brain repo restructured as plan (optional) → topic
+  (video/paper/essay) → session, with the notes page under it. Needs its own
+  Claude session; scope in `~/Code/learn/learn-app-plan.md` under "Todo".
+  Until then class notes are Claude artifacts only (`scripts/notes.mjs`),
+  and nothing is written into `~/Code/brain`.
 
 ## Learned the hard way
 
