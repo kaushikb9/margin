@@ -121,9 +121,8 @@ main { flex: 1; overflow-y: auto; }
 
 /* break */
 .sweep { display: flex; flex-direction: column; }
-.sweep .row { display: grid; grid-template-columns: minmax(2.4rem, max-content) 1fr auto; gap: 0.5rem; padding: 0.5rem 0; border-top: 1px solid var(--line); font-size: var(--t-second); align-items: baseline; }
-.sweep .row .at { font-size: var(--t-caption); color: var(--muted); font-variant-numeric: tabular-nums; }
-.sweep .row .t { font-family: var(--serif); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sweep .row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.75rem; padding: 0.5rem 0; border-top: 1px solid var(--line); font-size: var(--t-second); align-items: baseline; }
+.sweep .row .t { font-family: var(--serif); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .sweep .row .st { font-size: var(--t-caption); color: var(--muted); white-space: nowrap; }
 .sweep .row .st.gold { color: var(--gold); font-weight: 600; }
 .row-actions { display: flex; gap: 1rem; align-items: baseline; }

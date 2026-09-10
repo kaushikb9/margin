@@ -305,8 +305,7 @@ function renderBreak(notes) {
   const s = $('sweep'); s.textContent = '';
   for (const n of notes) {
     const row = el('div', 'row');
-    row.appendChild(el('span', 'at', fmt(n.t)));
-    row.appendChild(el('span', 't', n.text));
+    const t = el('span', 't', n.text); t.title = `at ${fmt(n.t)}`; row.appendChild(t);
     const last = lastSubstantive(n.id);
     const st = el('span', 'st' + (last?.kind === 'check' && !n.overruled ? ' gold' : ''), last ? (last.kind === 'check' ? (n.overruled ? 'kept' : 'check this') : open.has(n.id) ? 'read' : 'answered') : n.tags.includes('#doubt') ? 'unanswered' : 'noted');
     row.appendChild(st); s.appendChild(row);
