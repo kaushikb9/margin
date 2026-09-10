@@ -16,7 +16,7 @@
 // nothing starred this script refuses. Below it, the raw thread, with a ★ on
 // every starred line. Nothing is repeated. Widgets: a one-line marker.
 import { readFileSync, writeFileSync, readdirSync, existsSync } from 'node:fs';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { homedir } from 'node:os';
@@ -84,19 +84,30 @@ const cachePath = join(cacheDir, 'summary.json');
 let summaryText = null;
 try { const c = JSON.parse(readFileSync(cachePath, 'utf8')); if (c.hash === starHash) summaryText = c.text; } catch { /* none yet */ }
 if (!summaryText) {
-  // The key comes from the environment or margin's .dev.vars, never from a file in the brain.
+  const system = `KB starred these lines while studying a lecture: some are his own notes, some are a teaching assistant's replies. Write "the things to remember" from them: the few ideas that matter, each in one plain sentence, in KB's own voice (first person where the line is his). Use only what the lines say; no new facts, no numbers that are not in the lines. At most 6 sentences, under 120 words, no headings, no bullets, no em dashes. Return ONLY a JSON object: {"text": "<the sentences, separated by newlines>"}`;
+  const user = starred.map((x, i) => `${i + 1}. [${x.who === 'ta' ? 'TA' : 'me'}] ${x.text}`).join('\n\n');
+  const words = t => t.trim().split(/\s+/).filter(Boolean).length;
+  const parse = c => { const m = c.match(/"text"\s*:\s*"((?:[^"\\]|\\.)*)"/s); try { return m ? JSON.parse('"' + m[1] + '"').trim() : ''; } catch { return ''; } };
+  // This runs on KB's laptop, where the claude CLI is logged in: sonnet writes
+  // the summary through `claude -p`. No key involved. OpenRouter is the
+  // fallback when the CLI is not on the path.
+  const hasClaude = process.env.TA_MOCK !== '1' && spawnSync('which', ['claude']).status === 0;
+  const askClaude = (u) => { const r = spawnSync('claude', ['-p', '--model', 'sonnet', '--output-format', 'text'], { input: `${system}\n\n${u}`, encoding: 'utf8', timeout: 180000 }); if (r.status !== 0) throw new Error(`claude -p failed: ${(r.stderr || '').slice(0, 200)}`); return r.stdout; };
   let key = process.env.OPENROUTER_API_KEY;
   if (!key) try { key = readFileSync(join(root, '.dev.vars'), 'utf8').match(/^OPENROUTER_API_KEY=(.+)$/m)?.[1]?.trim(); } catch { /* absent */ }
-  if (!key || process.env.TA_MOCK === '1') {
+  if (hasClaude) {
+    let text = parse(askClaude(user));
+    if (words(text) > 120) { const again = parse(askClaude(`${user}\n\nYour previous reply was ${words(text)} words. The limit is 120. Keep the most important sentences and cut the rest.`)); if (again) text = again; }
+    if (!text || /[<>]/.test(text)) { console.error('brain: the summary came back empty or unusable; nothing written'); process.exit(1); }
+    if (words(text) > 120) { const lines = []; let n = 0; for (const l of text.split(/\n+/)) { const w = words(l); if (n + w > 120 && lines.length) break; lines.push(l); n += w; } console.error(`brain: summary was ${words(text)} words after a retry; kept the first ${lines.length} lines`); text = lines.join('\n'); }
+    summaryText = text;
+    writeFileSync(cachePath, JSON.stringify({ hash: starHash, text, model: 'claude sonnet (cli)', at: new Date().toISOString() }, null, 1));
+  } else if (!key || process.env.TA_MOCK === '1') {
     // No model: the starred lines themselves, first sentence each. Deterministic; used by the tests.
     summaryText = starred.map(x => x.text.split(/(?<=[.!?])\s/)[0]).join('\n');
-    if (!process.env.TA_MOCK) console.error('brain: no OPENROUTER_API_KEY; the keep block is the starred lines verbatim, not a summary');
+    if (!process.env.TA_MOCK) console.error('brain: neither claude on the path nor OPENROUTER_API_KEY; the keep block is the starred lines verbatim, not a summary');
   } else {
     const env = { OPENROUTER_API_KEY: key, ...process.env };
-    const system = `KB starred these lines while studying a lecture: some are his own notes, some are a teaching assistant's replies. Write "the things to remember" from them: the few ideas that matter, each in one plain sentence, in KB's own voice (first person where the line is his). Use only what the lines say; no new facts, no numbers that are not in the lines. At most 6 sentences, under 120 words, no headings, no bullets, no em dashes. Return ONLY a JSON object: {"text": "<the sentences, separated by newlines>"}`;
-    const user = starred.map((x, i) => `${i + 1}. [${x.who === 'ta' ? 'TA' : 'me'}] ${x.text}`).join('\n\n');
-    const words = t => t.trim().split(/\s+/).filter(Boolean).length;
-    const parse = c => { const m = c.match(/"text"\s*:\s*"((?:[^"\\]|\\.)*)"/s); try { return m ? JSON.parse('"' + m[1] + '"').trim() : ''; } catch { return ''; } };
     let r = await chat({ model: modelFor('deeper', env), system, user, job: 'deeper', env });
     let text = parse(r.content);
     if (words(text) > 120) {
@@ -116,7 +127,9 @@ if (!summaryText) {
     writeFileSync(cachePath, JSON.stringify({ hash: starHash, text, model: r.model, at: new Date().toISOString() }, null, 1));
   }
 }
-const keepHtml = summaryText.split(/\n+/).map(l => `  <p>${esc(l.trim())}</p>`).filter(l => l.length > 11).join('\n');
+// One sentence per line in the block; a model that returns one long line is split on sentence ends.
+const keepLines = (summaryText.includes('\n') ? summaryText.split(/\n+/) : summaryText.split(/(?<=[.!?])\s+(?=[A-Z"'])/)).map(l => l.trim()).filter(Boolean);
+const keepHtml = keepLines.map(l => `  <p>${esc(l)}</p>`).join('\n');
 
 // ---- the margin ----
 const STAR = '<span class="star" title="Starred">★</span> ';
@@ -221,4 +234,4 @@ writeFileSync(indexPath, index);
 // ---- the brain's own check ----
 try { execFileSync('npm', ['test'], { cwd: BRAIN, stdio: 'pipe' }); }
 catch (e) { console.error(`brain: the brain's check failed after writing ${file}:\n${e.stdout?.toString().split('\n').filter(l => /✖|not ok|Error/.test(l)).slice(0, 8).join('\n')}`); process.exit(1); }
-console.log(`brain: ${existing ? 'rewrote' : 'wrote'} site/posts/${file} — ${notes.length} notes, ${starred.length} starred → ${summaryText.split(/\n+/).length} lines to remember, ${corrected} corrected; index row ${markerRe.test(readFileSync(indexPath, 'utf8')) ? 'in place' : 'added'}; brain check green. Commit and deploy the brain when you are ready.`);
+console.log(`brain: ${existing ? 'rewrote' : 'wrote'} site/posts/${file} — ${notes.length} notes, ${starred.length} starred → ${keepLines.length} things to remember, ${corrected} corrected; index row ${markerRe.test(readFileSync(indexPath, 'utf8')) ? 'in place' : 'added'}; brain check green. Commit and deploy the brain when you are ready.`);
