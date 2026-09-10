@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "margin",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Sits in the margin of a lecture. Jot as you go; the TA answers and checks under your notes.",
   "browser_specific_settings": {
     "gecko": {

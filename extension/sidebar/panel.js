@@ -216,10 +216,11 @@ function ago(iso) {
 }
 function clock(iso) { const d = new Date(iso); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; }
 
-function renderCites(cites) {
-  const c = el('div', 'cites');
-  for (const x of cites || []) { const b = el('button', 'cite', `${x.src === page.videoId ? '' : x.src + ' '}${fmt(x.t)}`); b.title = 'Jump'; b.onclick = () => seek(x.t); c.appendChild(b); }
-  return c;
+// One anchor, on the who-line, like the note's own. The rest stay in the data.
+function citeLink(cites) {
+  const x = (cites || [])[0]; if (!x) return null;
+  const b = el('button', 'at', `at ${fmt(x.t)}`); b.title = 'Jump the lecture to this moment'; b.onclick = () => seek(x.t);
+  return b;
 }
 
 function renderReply(n, r) {
@@ -234,21 +235,16 @@ function renderReply(n, r) {
   who.appendChild(el('span', 'avatar ta', 'TA'));
   who.appendChild(el('b', null, label));
   who.appendChild(document.createTextNode(` · ${ago(r.at)}${r.title ? ' · ' + r.title : ''}`));
+  const at = citeLink(r.cites); if (at) who.appendChild(at);
   box.appendChild(who);
 
   if (r.kind === 'answer' || r.kind === 'deeper') {
     box.appendChild(el('p', 'body', r.body));
     if (r.kind === 'deeper' && r.why) box.appendChild(el('p', 'why', (r.changed ? 'Changed: ' : 'Unchanged. ') + r.why));
-    box.appendChild(renderCites(r.cites));
-    const acts = el('div', 'acts');
-    acts.appendChild(actionPoke(n, r));
-    box.appendChild(acts);
   } else if (r.kind === 'check') {
     box.appendChild(el('p', 'claim', `“${r.claim}”`));
     box.appendChild(el('p', 'body', r.correction));
-    box.appendChild(renderCites(r.cites));
     const acts = el('div', 'acts');
-    acts.appendChild(actionPoke(n, r));
     if (n.overruled) { const s = el('span', 'state'); s.appendChild(el('b', null, 'Kept your version')); const u = el('button', null, 'Undo'); u.onclick = async () => { n.overruled = false; await saveSession(); render(); }; acts.appendChild(s); acts.appendChild(u); }
     else { const f = el('button', null, 'Keep my version'); f.onclick = async () => { n.overruled = true; await saveSession(); render(); }; acts.appendChild(f); }
     box.appendChild(acts);
@@ -261,17 +257,10 @@ function renderReply(n, r) {
   return box;
 }
 
-function actionPoke(n, r) {
-  const built = repliesFor(n.id).some(x => x.kind === 'widget');
-  if (built) { const s = el('span', 'state'); s.appendChild(el('b', null, 'Built')); return s; }
-  const b = el('button', null, r.kind === 'check' ? 'Show me' : 'Poke at it');
-  b.onclick = () => ask('widget', n, { reply: r });
-  return b;
-}
-
 // The thread is a conversation: a follow-up is answered with the thread in
-// view, and the desk escalates to the reasoning pass when the notes are not
-// enough. No button for that; it just takes a little longer.
+// view; the desk escalates to the reasoning pass when the notes are not
+// enough, and builds a widget when you ask for something to play with. No
+// buttons for either; it just takes a little longer.
 function renderFollowUp(n) {
   const box = el('div', 'followup');
   const ta = el('textarea'); ta.rows = 1; ta.placeholder = 'Reply… Enter sends.';
@@ -284,7 +273,7 @@ function renderFollowUp(n) {
 function renderWidget(r) {
   const t = $('tpl-widget').content.firstElementChild.cloneNode(true);
   t.querySelector('.wname').textContent = r.title;
-  t.querySelector('.wgen').textContent = `built ${ago(r.at)}`;
+  t.querySelector('.wgen').textContent = ago(r.at);
   t.querySelector('.wnote').textContent = r.note;
   const frame = t.querySelector('.wframe');
   frame.src = settings.deskUrl.replace(/\/$/, '') + '/widget/runtime';

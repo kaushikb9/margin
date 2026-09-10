@@ -42,8 +42,15 @@ export async function onRequestPost({ request, env }) {
     thread.push(you);
   }
 
-  const r = await MODES[mode]({
-    brain, transcripts, jot, source: src, t: note.t, prior, reply, thread, env,
+  // "show me", "slider", "let me try": the follow-up wants something to poke
+  // at, so it is built as the reply instead of answered in prose.
+  let effective = mode;
+  const WANTS_WIDGET = /\b(show me|slider|widget|interactive|let me (try|play)|play with|poke|demo|visuali[sz]e)\b/i;
+  const lastTa = [...thread].reverse().find(x => ['answer', 'deeper', 'check'].includes(x.kind));
+  if (mode === 'answer' && typeof followUp === 'string' && WANTS_WIDGET.test(followUp) && lastTa) effective = 'widget';
+
+  const r = await MODES[effective]({
+    brain, transcripts, jot, source: src, t: note.t, prior, reply: reply || lastTa, thread, env,
     log: line => log(env, line),
   });
 
@@ -53,7 +60,7 @@ export async function onRequestPost({ request, env }) {
     return json({ reply: null, retrieved: r.retrieved });
   }
 
-  const kind = r.ok ? (r.escalated ? 'deeper' : mode) : 'error';
+  const kind = r.ok ? (r.escalated ? 'deeper' : effective) : 'error';
   if (!REPLY_KINDS.includes(kind)) return bad('internal: bad kind', 500);
   const seq = thread.length + 1;
   const stored = {
@@ -63,7 +70,7 @@ export async function onRequestPost({ request, env }) {
     ...(r.escalated ? { escalated: true } : {}),
   };
   if (env.TA_KV) await env.TA_KV.put(replyKey(src.id, note.id, seq), JSON.stringify(stored));
-  log(env, `${mode} ${note.id}: ${kind} in ${stored.ms}ms via ${stored.model}${r.ok ? '' : ` — ${r.error}`}`);
+  log(env, `${effective} ${note.id}: ${kind} in ${stored.ms}ms via ${stored.model}${r.ok ? '' : ` — ${r.error}`}`);
   const you = thread.find(x => x.kind === 'you' && x.seq === thread.length);
   return json({ reply: stored, you: you || null, retrieved: r.retrieved || null });
 }
