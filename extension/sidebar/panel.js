@@ -189,9 +189,11 @@ function renderNote(n) {
   if (replies.length && !open.has(n.id)) {
     const last = replies[replies.length - 1];
     const line = el('button', 'collapsed ' + (last.kind === 'check' ? 'check' : last.kind === 'error' ? 'error' : ''));
-    const label = { you: 'You replied', answer: 'Answered', deeper: 'Answered', check: 'On what you wrote', widget: 'Built', error: 'Could not answer' }[last.kind] || last.kind;
-    const b = el('b', null, label); line.appendChild(b);
-    line.appendChild(document.createTextNode(` · ${last.title || last.claim?.slice(0, 40) || ''}`));
+    // No status word: the title says it was answered, the gold says it was
+    // corrected, and "N replies" says there is more.
+    if (last.kind === 'check') line.appendChild(el('b', null, (last.correction || '').split(/(?<=[.!?])\s/)[0].slice(0, 60) + '…'));
+    else if (last.kind === 'error') line.appendChild(el('b', null, 'Could not answer'));
+    else line.appendChild(document.createTextNode(last.title || (last.kind === 'you' ? 'You replied' : last.kind === 'widget' ? 'Built' : '')));
     line.appendChild(el('span', 'n', `${replies.length} ${replies.length === 1 ? 'reply' : 'replies'}`));
     line.onclick = () => { open.add(n.id); render(); };
     body.appendChild(line);
