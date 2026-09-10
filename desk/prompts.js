@@ -21,7 +21,9 @@ Running example for this milestone: ${cluster.name}. ${cluster.thread}
 
 ${VOICE}
 
-Return ONLY a JSON object: {"concept": "<note id>", "title": "<the note's title or a sharper one>", "body": "<prose>", "cites": [{"src": "<video id>", "t": <seconds>}], "widgetHint": "<hint from the note or null>"}. Cites must come from the notes' anchors or from the transcript window timestamps; at most ${LIMITS.citesMax}.`;
+Return ONLY a JSON object with exactly these keys — "concept", "title", "body", "cites", "widgetHint" — for example:
+{"concept": "c-tokenization", "title": "Tokenization", "body": "Your keyboard does not think in letters...", "cites": [{"src": "7xTGNNLPyMI", "t": 913}], "widgetHint": null}
+"concept" is the id of the one note you answered from (the ### heading). Cites must come from the notes' anchors or from the transcript window timestamps; at most ${LIMITS.citesMax}. Do not use the notes' own field names; do not add keys.`;
 
   const user = `KB is watching "${source.title}" (${source.id}) and is at ${fmtTime(t)}.
 

@@ -57,3 +57,9 @@ test('widget outputs: compute result is checked per kind', () => {
   assert.match(validateWidgetOutputs(widget, { probs: [{ label: 'a', value: 2 }] }).error, /0\.\.1/);
   assert.match(validateWidgetOutputs(widget, {}).error, /no value/);
 });
+
+test('normalise maps the aliases models drift to', async () => {
+  const { normalise } = await import('../desk/schema.js');
+  const r = validateAnswer(normalise({ id: 'c-tokenization', title: 'T', text: good.body, citations: [{ src: '7xTGNNLPyMI', t: 913 }], widgetHint: null }), { knownConcepts: K, knownSources: S });
+  assert.ok(r.ok, r.error); assert.equal(r.value.concept, 'c-tokenization');
+});

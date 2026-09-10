@@ -35,12 +35,15 @@ async function run({ kind, prompt, ctx, env, log, fetchImpl }) {
   }
   const models = [modelFor(job, env), ...fallbacksFor(job, env)];
   for (const model of models) {
+    let feedback = '';
     for (let i = 0; i < 2; i++) {
       try {
-        const r = await chat({ model, system: prompt.system, user: prompt.user, job, env, fetchImpl });
+        const user = feedback ? `${prompt.user}\n\nYour previous reply was rejected: ${feedback}. Return ONLY the JSON object described in the instructions, with exactly those keys.` : prompt.user;
+        const r = await chat({ model, system: prompt.system, user, job, env, fetchImpl });
         const v = validate(extractJson(r.content), opts);
         if (v.ok) return { ok: true, value: v.value, model: r.model, usage: r.usage, attempts };
         attempts.push({ model, error: v.error, raw: r.content.slice(0, 200) });
+        feedback = v.error;
         log?.(`ask ${kind}: ${model} invalid (${i + 1}/2): ${v.error} — raw: ${JSON.stringify(r.content.slice(0, 160))}${r.finish === 'length' ? ' [truncated at max_tokens]' : ''}`);
       } catch (e) {
         attempts.push({ model, error: String(e.message || e) });

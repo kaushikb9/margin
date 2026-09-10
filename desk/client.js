@@ -15,7 +15,14 @@ export async function chat({ model, system, user, job, env, fetchImpl = fetch, s
     response_format: { type: 'json_object' },
   };
   if (settings.reasoning) body.reasoning = settings.reasoning;
-  const res = await fetchImpl(ENDPOINT, {
+  let res = await post(body);
+  // A provider that refuses the reasoning setting gets the same request
+  // without it, once. The cap already leaves room for whatever it thinks.
+  if (res.status === 400 && body.reasoning) {
+    const text = await res.clone().text().catch(() => '');
+    if (/reasoning/i.test(text)) { delete body.reasoning; res = await post(body); }
+  }
+  async function post(b) { return fetchImpl(ENDPOINT, {
     method: 'POST',
     signal,
     headers: {
@@ -24,8 +31,8 @@ export async function chat({ model, system, user, job, env, fetchImpl = fetch, s
       'HTTP-Referer': env.TA_REFERER || 'https://ta.kb.local',
       'X-Title': 'TA',
     },
-    body: JSON.stringify(body),
-  });
+    body: JSON.stringify(b),
+  }); }
   if (!res.ok) {
     const text = await res.text().catch(() => '');
     throw new Error(`openrouter ${res.status} for ${model}: ${text.slice(0, 300)}`);

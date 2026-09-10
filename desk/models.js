@@ -42,13 +42,14 @@ export function fallbacksFor(job, env = {}) {
 }
 
 // Per-job generation settings. Low temperature everywhere: the TA is
-// composing from notes, not brainstorming. Reasoning is OFF for the cheap
-// jobs — these models think by default, OpenRouter counts the thinking
-// against max_tokens, and a 700-token cap came back empty (2026-09-10).
-// The deeper pass is the one job that should think, so it gets a big cap.
+// composing from notes, not brainstorming. Reasoning is LOW, not off, for
+// the cheap jobs: GLM 5.3 Flash rejects `enabled: false` ("Reasoning is
+// mandatory for this endpoint", 2026-09-10), and OpenRouter counts the
+// thinking against max_tokens — so the caps leave room for it. The deeper
+// pass is the one job that should think properly.
 export const SETTINGS = {
-  composer: { temperature: 0.3, max_tokens: 1200, reasoning: { enabled: false } },
-  checker: { temperature: 0.1, max_tokens: 900, reasoning: { enabled: false } },
-  deeper: { temperature: 0.3, max_tokens: 6000, reasoning: { effort: 'medium' } },
-  widget: { temperature: 0.2, max_tokens: 2500, reasoning: { enabled: false } },
+  composer: { temperature: 0.3, max_tokens: 3000, reasoning: { effort: 'low' } },
+  checker: { temperature: 0.1, max_tokens: 2500, reasoning: { effort: 'low' } },
+  deeper: { temperature: 0.3, max_tokens: 8000, reasoning: { effort: 'medium' } },
+  widget: { temperature: 0.2, max_tokens: 4000, reasoning: { effort: 'low' } },
 };

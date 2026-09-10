@@ -40,7 +40,19 @@ function checkCites(cites, knownSources) {
   return null;
 }
 
+// Models drift to the note's own field names ("id", "text") or to synonyms.
+// Map the obvious ones onto the contract before judging.
+const ALIASES = { concept: ['id', 'note', 'noteId', 'concept_id'], body: ['text', 'answer', 'explanation', 'reply'], cites: ['citations', 'anchors', 'sources'], correction: ['right', 'fix', 'whatIsRight'], claim: ['quote', 'wrong'] };
+export function normalise(obj) {
+  if (!obj || typeof obj !== 'object') return obj;
+  const out = { ...obj };
+  for (const [canon, alts] of Object.entries(ALIASES)) if (!(canon in out)) for (const a of alts) if (a in out) { out[canon] = out[a]; break; }
+  if (Array.isArray(out.cites)) out.cites = out.cites.map(c => (typeof c === 'number' ? { src: out.src || null, t: c } : c && typeof c === 'object' && 't' in c && !('src' in c) ? { ...c, src: out.src || null } : c));
+  return out;
+}
+
 export function validateAnswer(obj, { knownConcepts, knownSources } = {}) {
+  obj = normalise(obj);
   if (!obj || typeof obj !== 'object') return bad('answer: not an object');
   for (const f of ANSWER_FIELDS) if (!(f in obj)) return bad(`answer.${f}: missing`);
   if (typeof obj.concept !== 'string' || (knownConcepts && !knownConcepts.has(obj.concept))) return bad(`answer.concept: must be one of the retrieved note ids, got ${JSON.stringify(obj.concept)}`);
@@ -55,6 +67,7 @@ export function validateAnswer(obj, { knownConcepts, knownSources } = {}) {
 }
 
 export function validateCheck(obj, { knownConcepts, knownSources } = {}) {
+  obj = normalise(obj);
   if (!obj || typeof obj !== 'object') return bad('check: not an object');
   if (obj.verdict !== 'ok' && obj.verdict !== 'check') return bad('check.verdict: must be "ok" or "check"');
   if (obj.verdict === 'ok') return good({ verdict: 'ok' });
