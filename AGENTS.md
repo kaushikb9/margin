@@ -108,9 +108,10 @@ for the deeper pass. Fallbacks are cross-family (DeepSeek V4, Qwen, Kimi) so
 one provider's outage does not take the desk down. No GPT or Claude family
 anywhere, by KB's rule.
 
-Replies have not yet been read side by side: run
-`OPENROUTER_API_KEY=… npm run bench composer z-ai/glm-5.3-flash deepseek/deepseek-v4-flash`
-and `bench checker` once, and read them. Override per job without a code
+Read side by side on 2026-09-10: composer 6/6 on KB's real d1 doubts (median
+~3s), checker 4/4 on notes with known verdicts (median ~2s). DeepSeek V4
+Flash answered as well but at 7–31s. Re-run `npm run bench composer …` and
+`bench checker …` after any prompt or model change. Override per job without a code
 change: `TA_MODEL_COMPOSER`, `TA_MODEL_CHECKER`, `TA_MODEL_DEEPER`,
 `TA_MODEL_WIDGET`, and `TA_FALLBACK_<JOB>` as a comma list.
 
@@ -181,6 +182,16 @@ Without `OPENROUTER_API_KEY` the desk runs the mock model and says so in
   `connect-src 'none'`. Do not move it back into the extension.
 - **KV prefix listing with a padded empty seq matched nothing** — every reply
   got seq 1 and overwrote the last. `replyPrefix()` exists for this; use it.
+- **Auto-captions garble numbers, and a model will quote them.** The checker
+  fixed "15 million" and added a nonexistent "45B Llama 3" from the caption
+  "Lama 3.1 4.5 405 billion". Prompts now pin every figure to the NOTES and
+  forbid taking numbers from the transcript. A wrong number in a correction
+  arrives in the same confident voice as a right one; the brain notes are the
+  only trusted source, so put the figure in the note.
+- **GLM 5.3 Flash cannot switch reasoning off** ("Reasoning is mandatory for
+  this endpoint"), and OpenRouter counts the thinking against `max_tokens`.
+  Cheap jobs run `effort: low` with caps that leave room; a provider that
+  rejects the reasoning field is retried once without it.
 - **The position prior must not outrank a strong lexical hit.** At 2.2× it
   ranked a neighbouring note above the one the jot literally named; at 0.6×
   with lexical damped by confidence, both cases pass (`tests/retrieve.test.js`
