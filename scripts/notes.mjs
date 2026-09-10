@@ -55,13 +55,14 @@ const indexHtml = [...touched.entries()].map(([cid, hits]) => {
 let widgetSeq = 0; const widgets = [];
 function replyHtml(r, note) {
   const who = { answer: 'TA', deeper: 'TA · deeper', check: 'Check this', widget: 'TA · built', error: 'TA' }[r.kind] || r.kind;
-  if (r.kind === 'answer' || r.kind === 'deeper') return `<div class="reply"><p class="who"><b>${who}</b> · ${esc(r.title || '')} · ${clock(r.at)}</p>${r.kind === 'deeper' && r.why ? `<p class="why">${r.changed ? 'Changed: ' : 'Unchanged. '}${esc(r.why)}</p>` : ''}<p class="body">${esc(r.body)}</p><div class="cites">${cites(r.cites)}</div></div>`;
-  if (r.kind === 'check') return `<div class="reply check${note.overruled ? ' overruled' : ''}"><p class="who"><b>${who}</b> · ${clock(r.at)}</p><p class="kb">“${esc(r.claim)}”</p><p class="body">${esc(r.correction)}</p><div class="cites">${cites(r.cites)}</div>${note.overruled ? '<p class="why">You kept your version.</p>' : ''}</div>`;
+  if (r.kind === 'answer' || r.kind === 'deeper') return `<div class="reply"><p class="who"><span class="avatar ta">TA</span><b>${who}</b> · ${esc(when(r.at))}${r.title ? ' · ' + esc(r.title) : ''}</p>${r.kind === 'deeper' && r.why ? `<p class="why">${r.changed ? 'Changed: ' : 'Unchanged. '}${esc(r.why)}</p>` : ''}<p class="body">${esc(r.body)}</p><div class="cites">${cites(r.cites)}</div></div>`;
+  if (r.kind === 'check') return `<div class="reply check${note.overruled ? ' overruled' : ''}"><p class="who"><span class="avatar ta">TA</span><b>${who}</b> · ${esc(when(r.at))}</p><p class="kb">“${esc(r.claim)}”</p><p class="body">${esc(r.correction)}</p><div class="cites">${cites(r.cites)}</div>${note.overruled ? '<p class="why">You kept your version.</p>' : ''}</div>`;
   if (r.kind === 'widget') { const id = 'w' + (++widgetSeq); widgets.push({ id, spec: { title: r.title, note: r.note, inputs: r.inputs, outputs: r.outputs, compute: r.compute } }); return `<div class="widget" id="${id}"><span class="wname">${esc(r.title)} · built ${clock(r.at)}</span><div class="wbody"></div><p class="caption">${esc(r.note)}</p></div>`; }
   if (r.kind === 'error') return `<div class="reply"><p class="who"><b>TA</b> · ${clock(r.at)}</p><p class="body muted">Could not answer: ${esc(r.error || '')}</p></div>`;
   return '';
 }
-const threadHtml = notes.map(n => `<div class="jot" id="n-${esc(n.id)}"><a class="at" href="${yt(n.t)}" target="_blank" rel="noopener">${esc(fmt(n.t))}</a><div><p class="txt">${esc(n.text)}${(n.tags || []).map(t => ` <span class="tag">${esc(t)}</span>`).join('')}</p>${(n.replies || []).map(r => replyHtml(r, n)).join('') || '<p class="caption" style="margin-top:0.25rem">No reply. The check found nothing.</p>'}</div></div>`).join('\n');
+const when = iso => new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+const threadHtml = notes.map(n => `<div class="jot" id="n-${esc(n.id)}"><p class="meta"><span class="avatar">K</span><b>Kaushik</b> · ${esc(when(n.createdAt))}<a class="at" href="${yt(n.t)}" target="_blank" rel="noopener">at ${esc(fmt(n.t))}</a></p><p class="txt">${esc(n.text)}${(n.tags || []).map(t => ` <span class="tag">${esc(t)}</span>`).join('')}</p>${(n.replies || []).map(r => replyHtml(r, n)).join('') || '<p class="caption" style="margin-top:0.25rem">No reply. The check found nothing.</p>'}</div>`).join('\n');
 
 const html = `<title>Class notes · ${esc(title)} · ${date}</title>
 <style>
@@ -88,7 +89,7 @@ a { color:inherit; text-decoration:underline; text-decoration-color:var(--line);
 .tag { font-size:var(--t-caption); color:var(--ink); background:var(--gold-soft); border-radius:999px; padding:0.02rem 0.5rem; }
 .reply { margin-top:0.55rem; border-left:2px solid var(--line); padding-left:0.75rem; display:flex; flex-direction:column; gap:0.35rem; font-size:var(--t-second); }
 .reply.check { border-left-color:var(--gold); } .reply.overruled .body { color:var(--muted); }
-.reply .who { font-size:var(--t-caption); color:var(--muted); } .reply .who b { color:var(--ink); font-weight:600; } .reply.check .who b { color:var(--gold); }
+.reply .who { font-size:var(--t-caption); color:var(--muted); display:flex; align-items:center; gap:0.5rem; } .reply .who b { color:var(--ink); font-weight:600; } .reply.check .who b { color:var(--gold); }
 .reply .body { line-height:1.6; white-space:pre-wrap; } .reply .kb { font:400 var(--t-second)/1.5 var(--serif); color:var(--muted); } .reply .why { font-size:var(--t-caption); color:var(--muted); }
 .cites { display:flex; flex-wrap:wrap; gap:0.35rem; }
 .cite { font-size:var(--t-caption); color:var(--muted); border:1px solid var(--line); border-radius:4px; padding:0.05rem 0.4rem; font-variant-numeric:tabular-nums; text-decoration:none; }

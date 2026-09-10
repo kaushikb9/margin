@@ -182,7 +182,9 @@ function renderQueue(notes) {
 
 function renderNote(n) {
   const row = el('div', 'jot');
-  const at = el('span', 'at'); const atBtn = el('button', null, fmt(n.t)); atBtn.title = 'Jump to this moment'; atBtn.onclick = () => seek(n.t); at.appendChild(atBtn); row.appendChild(at);
+  const meta = el('p', 'meta'); meta.appendChild(el('span', 'avatar', 'K')); meta.appendChild(el('b', null, 'Kaushik')); meta.appendChild(document.createTextNode(` · ${ago(n.createdAt)}`));
+  if (open.has(n.id)) { const at = el('button', 'at', `at ${fmt(n.t)}`); at.title = 'Jump the lecture to this moment'; at.onclick = () => seek(n.t); meta.appendChild(at); }
+  row.appendChild(meta);
   const body = el('div');
   body.appendChild(el('p', 'txt', n.text));
   const tags = el('p', 'tags');
@@ -201,7 +203,8 @@ function renderNote(n) {
     const line = el('button', 'collapsed ' + (last.kind === 'check' ? 'check' : last.kind === 'error' ? 'error' : ''));
     const label = { answer: 'Answered', deeper: 'Deeper', check: 'Check this', widget: 'Built', error: 'Could not answer' }[last.kind] || last.kind;
     const b = el('b', null, label); line.appendChild(b);
-    line.appendChild(document.createTextNode(` · ${last.title || last.claim?.slice(0, 40) || ''}${last.title || last.claim ? ' · ' : ''}${clock(last.at)}${replies.length > 1 ? ` · ${replies.length} replies` : ''}`));
+    line.appendChild(document.createTextNode(` · ${last.title || last.claim?.slice(0, 40) || ''}`));
+    line.appendChild(el('span', 'n', `${replies.length} ${replies.length === 1 ? 'reply' : 'replies'}`));
     line.onclick = () => { open.add(n.id); render(); };
     body.appendChild(line);
   } else if (replies.length) {
@@ -212,6 +215,14 @@ function renderNote(n) {
   return row;
 }
 
+function ago(iso) {
+  const s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
+  if (s < 60) return 'just now';
+  if (s < 3600) return `${Math.floor(s / 60)}m`;
+  if (s < 86400) return `${Math.floor(s / 3600)}h`;
+  if (s < 7 * 86400) return `${Math.floor(s / 86400)}d`;
+  return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+}
 function clock(iso) { const d = new Date(iso); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; }
 
 function renderCites(cites) {
@@ -224,8 +235,9 @@ function renderReply(n, r) {
   const box = el('div', 'reply' + (r.kind === 'check' ? ' check' : '') + (r.kind === 'check' && n.overruled ? ' overruled' : ''));
   const who = el('p', 'who');
   const label = { answer: 'TA', deeper: 'TA · deeper', check: 'Check this', widget: 'TA · built', error: 'TA' }[r.kind] || r.kind;
+  who.appendChild(el('span', 'avatar ta', 'TA'));
   who.appendChild(el('b', null, label));
-  who.appendChild(document.createTextNode(` · ${r.title || ''}${r.title ? ' · ' : ''}${clock(r.at)}`));
+  who.appendChild(document.createTextNode(` · ${ago(r.at)}${r.title ? ' · ' + r.title : ''}`));
   box.appendChild(who);
 
   if (r.kind === 'answer' || r.kind === 'deeper') {
