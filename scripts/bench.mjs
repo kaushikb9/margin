@@ -5,13 +5,14 @@
 //
 //   OPENROUTER_API_KEY=... node scripts/bench.mjs                       # defaults
 //   OPENROUTER_API_KEY=... node scripts/bench.mjs composer a/one b/two  # a job and candidates
+//   jobs: composer | checker | deeper | widget  (deeper and widget run one case each: the temperature note)
 //
 // Prints, per model: validity rate, median latency, tokens, and the replies
 // themselves for reading. Writes bench/<job>-<date>.json for later comparison.
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { Brain, answer, check } from '../desk/ask.js';
+import { Brain, answer, check, deeper, widget } from '../desk/ask.js';
 import { DEFAULTS, FALLBACKS } from '../desk/models.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -22,7 +23,8 @@ if (!/^sk-or-/.test(KEY)) { console.error(`bench: OPENROUTER_API_KEY does not lo
 
 const [job = 'composer', ...cands] = process.argv.slice(2);
 const models = cands.length ? cands : [DEFAULTS[job], ...(FALLBACKS[job] || [])];
-const run = job === 'checker' ? check : answer;
+const run = { composer: answer, checker: check, deeper, widget }[job];
+if (!run) { console.error(`bench: unknown job ${job}`); process.exit(2); }
 
 const brain = new Brain([load('site/brain/d1.json'), load('site/brain/d2.json')]);
 const transcripts = { '7xTGNNLPyMI': load('site/transcripts/7xTGNNLPyMI.json'), 'kCc8FmEb1nY': load('site/transcripts/kCc8FmEb1nY.json') };
@@ -44,7 +46,11 @@ const NOTES = [
   { text: 'knowledge in parameters = vague memory; knowledge in tokens of context window = working memory', t: 5990, tags: [], expect: 'ok' },
 ];
 
-const cases = job === 'checker' ? NOTES : DOUBTS;
+// deeper and widget take one case: the temperature note, with the check the
+// bench produced earlier standing in as the prior reply.
+const PRIOR = { kind: 'check', concept: 'c-sampling-temperature', correction: 'Low temperature makes the output repeatable, not more accurate. The ranking of candidates never changes, only how far down the list it samples.' };
+const ONE = [{ text: NOTES[0].text, t: NOTES[0].t, tags: NOTES[0].tags, prior: PRIOR, reply: PRIOR }];
+const cases = { composer: DOUBTS, checker: NOTES, deeper: ONE, widget: ONE }[job];
 const results = {};
 for (const model of models) {
   const env = { OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY, [`TA_MODEL_${job.toUpperCase()}`]: model, [`TA_FALLBACK_${job.toUpperCase()}`]: ' ' };
@@ -53,14 +59,19 @@ for (const model of models) {
   for (const c of cases) {
     const jot = { id: 'b' + Math.random().toString(36).slice(2, 8), text: c.text, tags: c.tags, t: c.t };
     const t0 = Date.now();
-    const r = await run({ brain, transcripts, jot, source, t: c.t, env, log: l => console.log('   ', l) });
+    const r = await run({ brain, transcripts, jot, source, t: c.t, env, prior: c.prior, reply: c.reply, log: l => console.log('   ', l) });
     const ms = Date.now() - t0;
     const ok = r.ok && (job !== 'checker' || r.value.verdict === c.expect);
     rows.push({ text: c.text, ms, ok, valid: r.ok, model: r.model, usage: r.usage, value: r.value, error: r.error });
     console.log(`\n— ${c.text.slice(0, 80)}${c.text.length > 80 ? '…' : ''}  [${ms}ms, ${ok ? 'ok' : 'MISS'}]`);
     if (r.ok) {
       if (job === 'checker') console.log(`   verdict=${r.value.verdict}${r.value.verdict === 'check' ? ` · ${r.value.correction}` : ''}`);
-      else console.log(`   ${r.value.concept} · ${r.value.title}\n   ${r.value.body}\n   cites: ${r.value.cites.map(x => x.t).join(', ')}`);
+      else if (job === 'widget') {
+        const fn = new Function('inputs', r.value.compute); const init = Object.fromEntries(r.value.inputs.map(i => [i.id, i.value]));
+        let out, err = null; try { out = fn(init); } catch (e) { err = e.message; }
+        console.log(`   ${r.value.title} — ${r.value.note}\n   inputs: ${r.value.inputs.map(i => `${i.id}:${i.kind}`).join(', ')} · outputs: ${r.value.outputs.map(o => `${o.id}:${o.kind}`).join(', ')}\n   compute at defaults: ${err ? 'THREW ' + err : JSON.stringify(out).slice(0, 300)}`);
+      }
+      else console.log(`   ${r.value.concept} · ${r.value.title}${job === 'deeper' ? ` · changed=${r.value.changed}${r.value.why ? ' · ' + r.value.why : ''}` : ''}\n   ${r.value.body}\n   cites: ${r.value.cites.map(x => x.t).join(', ')}${r.usage ? `\n   tokens: ${r.usage.prompt_tokens} in / ${r.usage.completion_tokens} out` : ''}`);
     } else console.log(`   invalid: ${r.error}`);
   }
   const lat = rows.map(r => r.ms).sort((a, b) => a - b);
