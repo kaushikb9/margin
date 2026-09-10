@@ -31,9 +31,15 @@ export async function chat({ model, system, user, job, env, fetchImpl = fetch, s
     throw new Error(`openrouter ${res.status} for ${model}: ${text.slice(0, 300)}`);
   }
   const data = await res.json();
-  const content = data?.choices?.[0]?.message?.content;
-  if (typeof content !== 'string') throw new Error(`openrouter: no content from ${model}`);
-  return { content, usage: data.usage || null, model: data.model || model };
+  const msg = data?.choices?.[0]?.message || {};
+  // Some providers return content as an array of parts.
+  let content = Array.isArray(msg.content) ? msg.content.map(p => p?.text || '').join('') : msg.content;
+  const finish = data?.choices?.[0]?.finish_reason;
+  if (typeof content !== 'string' || !content.trim()) {
+    const why = finish === 'length' ? 'hit max_tokens (reasoning counts against it — raise the cap or disable reasoning for this job)' : `finish_reason=${finish}`;
+    throw new Error(`openrouter: empty content from ${model}: ${why}${msg.reasoning ? '; reasoning was returned instead' : ''}`);
+  }
+  return { content, usage: data.usage || null, model: data.model || model, finish };
 }
 
 export function isMock(env) {

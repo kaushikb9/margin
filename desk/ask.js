@@ -40,8 +40,8 @@ async function run({ kind, prompt, ctx, env, log, fetchImpl }) {
         const r = await chat({ model, system: prompt.system, user: prompt.user, job, env, fetchImpl });
         const v = validate(extractJson(r.content), opts);
         if (v.ok) return { ok: true, value: v.value, model: r.model, usage: r.usage, attempts };
-        attempts.push({ model, error: v.error });
-        log?.(`ask ${kind}: ${model} invalid (${i + 1}/2): ${v.error}`);
+        attempts.push({ model, error: v.error, raw: r.content.slice(0, 200) });
+        log?.(`ask ${kind}: ${model} invalid (${i + 1}/2): ${v.error} — raw: ${JSON.stringify(r.content.slice(0, 160))}${r.finish === 'length' ? ' [truncated at max_tokens]' : ''}`);
       } catch (e) {
         attempts.push({ model, error: String(e.message || e) });
         log?.(`ask ${kind}: ${model} failed (${i + 1}/2): ${e.message}`);

@@ -42,10 +42,13 @@ export function fallbacksFor(job, env = {}) {
 }
 
 // Per-job generation settings. Low temperature everywhere: the TA is
-// composing from notes, not brainstorming.
+// composing from notes, not brainstorming. Reasoning is OFF for the cheap
+// jobs — these models think by default, OpenRouter counts the thinking
+// against max_tokens, and a 700-token cap came back empty (2026-09-10).
+// The deeper pass is the one job that should think, so it gets a big cap.
 export const SETTINGS = {
-  composer: { temperature: 0.3, max_tokens: 700 },
-  checker: { temperature: 0.1, max_tokens: 500 },
-  deeper: { temperature: 0.3, max_tokens: 900, reasoning: { effort: 'medium' } },
-  widget: { temperature: 0.2, max_tokens: 1400 },
+  composer: { temperature: 0.3, max_tokens: 1200, reasoning: { enabled: false } },
+  checker: { temperature: 0.1, max_tokens: 900, reasoning: { enabled: false } },
+  deeper: { temperature: 0.3, max_tokens: 6000, reasoning: { effort: 'medium' } },
+  widget: { temperature: 0.2, max_tokens: 2500, reasoning: { enabled: false } },
 };
