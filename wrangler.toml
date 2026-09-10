@@ -8,7 +8,7 @@ pages_build_output_dir = "site"
 #   npx wrangler pages secret put TA_TOKEN --project-name ta-kb
 [[kv_namespaces]]
 binding = "TA_KV"
-id = "REPLACE_WITH_KV_NAMESPACE_ID"
+id = "88a2548e6a804514a4912d2f8621e812"
 
 # Optional model overrides (plain vars, not secrets):
 # [vars]

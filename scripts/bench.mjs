@@ -16,7 +16,9 @@ import { DEFAULTS, FALLBACKS } from '../desk/models.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const load = p => JSON.parse(readFileSync(join(root, p), 'utf8'));
-if (!process.env.OPENROUTER_API_KEY) { console.error('bench: set OPENROUTER_API_KEY'); process.exit(2); }
+const KEY = process.env.OPENROUTER_API_KEY || '';
+if (!KEY) { console.error('bench: set OPENROUTER_API_KEY'); process.exit(2); }
+if (!/^sk-or-/.test(KEY)) { console.error(`bench: OPENROUTER_API_KEY does not look like an OpenRouter key (starts "${KEY.slice(0, 6)}", expected "sk-or-"). OpenRouter answers a malformed key with "Missing Authentication header".`); process.exit(2); }
 
 const [job = 'composer', ...cands] = process.argv.slice(2);
 const models = cands.length ? cands : [DEFAULTS[job], ...(FALLBACKS[job] || [])];

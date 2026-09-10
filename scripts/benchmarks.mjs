@@ -4,7 +4,9 @@
 //   OPENROUTER_API_KEY=… node scripts/benchmarks.mjs [family …]
 //   OPENROUTER_API_KEY=… node scripts/benchmarks.mjs moonshotai z-ai deepseek
 // The endpoint needs a key (cookie or bearer); the public catalogue does not.
-if (!process.env.OPENROUTER_API_KEY) { console.error('benchmarks: set OPENROUTER_API_KEY'); process.exit(2); }
+const KEY = process.env.OPENROUTER_API_KEY || '';
+if (!KEY) { console.error('benchmarks: set OPENROUTER_API_KEY'); process.exit(2); }
+if (!/^sk-or-/.test(KEY)) { console.error(`benchmarks: OPENROUTER_API_KEY does not look like an OpenRouter key (starts "${KEY.slice(0, 6)}", expected "sk-or-"). OpenRouter answers a malformed key with "Missing Authentication header".`); process.exit(2); }
 const families = process.argv.slice(2).length ? process.argv.slice(2) : ['moonshotai', 'z-ai', 'deepseek', 'qwen', 'openai/gpt-oss'];
 const H = { Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}` };
 

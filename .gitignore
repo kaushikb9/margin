@@ -5,3 +5,4 @@ ta-extension.zip
 bench/
 .DS_Store
 notes/
+.dev.vars
