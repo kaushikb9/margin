@@ -15,7 +15,7 @@ const noteBlock = n => [
 const VOICE = `Voice: plain, short sentences, no headings, no bullet points, no em dashes. Simple everyday examples at the level of a CS graduate — never payments, never enterprise. Use the running example the notes use (the phone keyboard) when it helps; do not invent a new analogy. Speak to KB directly about the thing he wrote; do not say "great question". Do not tell him he is wrong; state what is right.`;
 
 export function composerPrompt({ jot, notes, cluster, source, t, window }) {
-  const system = `You are a teaching assistant sitting beside a recorded lecture. KB jotted a note while watching. Answer it from the NOTES below and nothing else; if the notes do not cover it, say what the nearest note does say and stop. One concept only — pick the single note id that best fits and answer that. Never exceed ${LIMITS.bodyWords} words.
+  const system = `You are a teaching assistant sitting beside a recorded lecture. KB jotted a note while watching. Answer it from the NOTES below and nothing else; if the notes do not cover it, say what the nearest note does say and stop. One concept only — pick the single note id that best fits and answer that. Never exceed ${LIMITS.bodyWords} words. Every number you state must appear in the NOTES; the transcript is auto-captioned and garbles numbers, so never take a figure from it.
 
 Running example for this milestone: ${cluster.name}. ${cluster.thread}
 
@@ -40,6 +40,8 @@ ${notes.map(noteBlock).join('\n\n')}`;
 
 export function checkerPrompt({ jot, notes, cluster, source, t, window }) {
   const system = `You are a teaching assistant reading a student's notebook during a lecture. KB wrote a note in his own words. Decide whether it states something that contradicts the NOTES below or the transcript. Be strict about substance and generous about phrasing: a loose paraphrase is fine; a wrong mechanism, a wrong number, or a confident claim the lecture does not support is a "check". Only flag what the notes or transcript actually contradict; do not flag omissions or things you merely cannot verify.
+
+Correct only the claim you flagged. Do not add facts, figures or history beyond it. Every number in your correction must appear in the NOTES; the transcript is auto-captioned and garbles numbers ("4.5 405 billion" is one number misheard), so for any figure trust the NOTES over the transcript, and if the notes do not carry the figure, leave it out.
 
 ${VOICE}
 
