@@ -50,14 +50,22 @@ Sources for all five, the plan and the original brief: `docs/history/`.
 - Cut on KB's instruction: break view, go-deeper-on-all, End session, tags,
   "Not convinced", "Poke at it", status labels, timestamp chips.
 
-## In the working tree, uncommitted until KB's go (this commit is WIP)
+## Built 2026-09-11 (0.2.0), per KB's go after the review
 
 - No checkbox: a question is answered, a statement is checked (`isQuestion`
   in panel.js). "?" forces an answer.
 - ☆ stars on notes and replies; a star on a reply also acks it; synced to the
   desk like acks (`notes.js` stores `stars`).
 
-## To build in one shot, on KB's go
+## What the review changed in the build list, and what was built
+
+- Acks stay as reactions; the "N awaiting you" footer count is gone (it was a queue).
+- Widgets frozen; no stills in the post (a marker line instead).
+- `npm run brain` by hand, not nightly; dated filename, one-keep rule strict,
+  index markers, live desk only, CSS bump done once by hand (post.css v2).
+- The "production commit not in history" finding was wrong: 86ddc6e is in main.
+
+## Original one-shot list (for the record)
 
 1. Transcript on first note: the desk fetches it (InnerTube from the worker;
    page-side fallback via the content script if refused) and answers from
@@ -188,3 +196,34 @@ the best guard in the estate against confident wrong numbers. Every model
 failure becomes a stored error reply, so a note is never silently
 unanswered. The "Learned the hard way" section is the most useful one on
 this machine.
+
+## Is it useful? A functional audit
+
+Evidence: built in one day. The 36-note concept brain is hand-written,
+every quote verified, and the sample explanations are genuinely good. The
+only session on disk is four notes against the mock model on localhost,
+two of them the same doubt typed twice. Production usage cannot be read
+from here (the dev token is rightly rejected), but nothing exported from
+it exists, so treat real lecture use as zero so far.
+
+| Piece | Verdict | Why |
+|---|---|---|
+| The concept brain (`site/brain`, quotes verified within ±45s) | **Keep** | The asset. It is what makes answers cited and numbers trustworthy. Worth more than the rest combined. |
+| Jot in the margin, no interruption, local-first | **Keep** | The premise. Cheap and right. |
+| The silent check ("temperature = accuracy" corrected, in gold, one line) | **Keep** | The one genuinely new thing here. A wrong note fixed while the lecture is still playing is the whole pitch. |
+| Answer from the notes for a question | **Keep** | Obvious value, small cost. |
+| The deeper pass with the full transcript, self-escalation on `enough:false` | **Keep, watch** | Sound design, but every mock reply in the session file escalated. Check the real rate after a week; if most answers escalate, the composer is not earning its call. |
+| Widgets: a fourth prompt, a sandboxed runtime, three renderers, forbidden-token validator | **Overkill for now** | The most code for the least-proven feature: one example widget (temperature slider) exists, and it is the mock's. Nothing in your doubts asked for one. Freeze it: keep what exists, build no stills, add no renderers, until a real session asks "show me" more than once. |
+| Follow-up threads | **Keep** | Conversations are how doubts actually resolve. |
+| 👍 acks and the "N awaiting you" footer count | **Cut** | This is the counter your own rules ban in the tracker: it turns replies into a queue you owe. A reply you read is read. |
+| ☆ stars | **Keep** | One gesture, one meaning: "remember this". It also feeds the post's keep block. |
+| Cross-family fallbacks, per-job timeouts, retry with feedback | **Keep** | Cheap insurance; the failure paths are the ones that run at 11pm. |
+| `bench`, `benchmarks` scripts | **Fine, done** | They chose the models. Not to be re-run without a reason. |
+| Transcript fallback via the content script, InnerTube fetch | **Keep** | Learned the hard way already; do not relearn. |
+| Nightly launchd job that renders, commits to the brain, and deploys | **Overkill** | Zero sessions, and it needs an exception to the brain's first rule, a marker in a hand-edited index, and a sandbox for stills. Replace with a manual `npm run brain <video>` you run when a lecture is done; it writes the post, you commit and push. Same output, no job, no exception, no unattended model code. |
+| Widget stills in the post | **Cut** | Link to the live widget from the post instead. Removes the security question entirely. |
+
+Net: the sidebar's core (brain, jot, check, answer, thread) is right-sized
+and good. The widget layer and the nightly brain job are the two places
+the build ran ahead of the evidence. Neither needs deleting; both need to
+stop growing until a real week of lectures says otherwise.

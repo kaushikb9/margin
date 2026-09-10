@@ -150,17 +150,24 @@ change: `TA_MODEL_COMPOSER`, `TA_MODEL_CHECKER`, `TA_MODEL_DEEPER`,
    is the source; the PNGs are rendered from it (`qlmanage -t -s 512`, then
    `sips`) because AMO's icon field wants PNG.
 
-## After a session
+## When a lecture is done: the brain post
 
 ```sh
-TA_HOST=… TA_TOKEN=… npm run export 7xTGNNLPyMI     # KV → sessions/<video>/<date>.json
-npm run notes sessions/7xTGNNLPyMI/<date>.json      # → notes/<video>-<date>.html
+TA_HOST=https://margin-3d0.pages.dev TA_TOKEN=… npm run brain 7xTGNNLPyMI
 ```
 
-Then publish the rendered page as a Claude artifact (the Artifact tool, from
-a session) — one artifact per session file. Nothing on the page is generated:
-the index lines are the replies' own first sentences, and every timestamp
-opens the lecture at that moment.
+One post per video, into `~/Code/brain/site/posts/YYYY-MM-DD-<slug>.html`
+(dated to the first note, found by slug on later runs, never renamed) plus
+its index row between `<!-- margin:<id> -->` markers. Key concepts are KB's
+own statements, corrected in bold where the TA checked them; the thread is
+the margin; the keep block is whatever KB starred. **No stars, no post** —
+the script refuses (exit 3). Widgets are not rendered; a line says one was
+built. It reads the live desk only (refuses localhost), then runs the
+brain's own `npm test`. Committing and deploying the brain stay KB's. Not
+nightly: run it by hand until it has produced three posts worth keeping.
+
+`npm run export` and `npm run notes` still exist for a per-session artifact
+page; they are not the record.
 
 ## Deploy
 

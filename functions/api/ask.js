@@ -26,7 +26,8 @@ export async function onRequestPost({ request, env }) {
 
   const origin = new URL(request.url).origin;
   const brain = await loadBrain(env, origin);
-  const transcripts = await loadTranscripts(env, origin);
+  const transcripts = await loadTranscripts(env, origin, [source.id]);
+  if (!transcripts[source.id]) return json({ error: 'no transcript for this video yet', needTranscript: true }, 409);
   const src = { id: source.id, title: source.title || transcripts[source.id]?.title || source.id };
   const jot = { id: note.id, text: note.text.trim(), tags: Array.isArray(note.tags) ? note.tags : [], t: note.t };
   const started = Date.now();

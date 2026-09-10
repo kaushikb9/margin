@@ -12,6 +12,8 @@ export const REPLY_KINDS = ['you', 'answer', 'check', 'deeper', 'widget', 'error
 
 // answer / deeper — one concept, in KB's framing, with anchors.
 export const ANSWER_FIELDS = ['concept', 'title', 'body', 'cites', 'widgetHint', 'enough'];
+// fromLecture: true on any reply produced without brain notes (an uncovered video).
+export const REPLY_FLAGS = ['fromLecture', 'escalated'];
 // enough: false means the notes did not cover it; the desk escalates to the
 // reasoning pass on its own and the panel shows that reply instead.
 // check — a note that contradicts the brain. verdict "ok" renders nothing.

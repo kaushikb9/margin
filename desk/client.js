@@ -63,12 +63,14 @@ export function isMock(env) {
 export function mockChat({ job, ctx }) {
   const top = ctx.notes?.[0];
   switch (job) {
-    case 'composer': return { content: JSON.stringify({
+    case 'composer': if (!top) return { content: JSON.stringify({ concept: 'lecture', title: 'From the lecture', body: (ctx.window || '').replace(/\[\d+:\d\d\]/g, '').split(/\s+/).slice(0, 60).join(' ') + '.', cites: [{ src: ctx.source.id, t: Math.max(0, ctx.t - 5) }], widgetHint: null, enough: !/why|really|still/i.test(ctx.jot.text) }), usage: null, model: 'mock' };
+      return { content: JSON.stringify({
       concept: top.id, title: top.title, body: top.explanation.split(/(?<=\.)\s/).slice(0, 4).join(' '),
       cites: top.anchors.slice(0, 2).map(a => ({ src: a.src, t: a.t })), widgetHint: top.widgetHint,
       enough: !(ctx.thread?.length) && !/why|really|still/i.test(ctx.jot.text),   // follow-ups and "but why" escalate in the mock
     }), usage: null, model: 'mock' };
     case 'checker': {
+      if (!ctx.notes?.length) return { content: JSON.stringify({ verdict: 'ok' }), usage: null, model: 'mock' };
       const claim = ctx.jot.text.toLowerCase();
       const hit = ctx.notes.find(n => {
         const k = n.wrongVersion.claim.toLowerCase().replace(/[^a-z0-9 ]/g, '');

@@ -1,6 +1,6 @@
 {
   "name": "margin",
-  "version": "0.1.6",
+  "version": "0.2.0",
   "private": true,
   "description": "margin: a Firefox sidebar that sits in the margin of a lecture. Jot as you go; the TA answers and checks under your notes from a precomputed concept brain.",
   "type": "module",
@@ -8,7 +8,7 @@
     "dev": "npx wrangler pages dev site --kv TA_KV --binding TA_TOKEN=devtoken --binding TA_MOCK=1 --port 8789",
     "dev:live": "npx wrangler pages dev site --kv TA_KV --binding TA_TOKEN=devtoken --port 8789",
     "test": "./check.sh",
-    "brain": "node scripts/check-brain.mjs",
+    "brain": "node scripts/brain.mjs",
     "quote": "node scripts/quote.mjs",
     "transcript": "node scripts/transcript.mjs",
     "bench": "node scripts/bench.mjs",

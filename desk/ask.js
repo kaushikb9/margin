@@ -1,7 +1,7 @@
 // The pipeline behind /api/ask. Pure: takes a loaded brain and transcripts,
 // returns a reply object. The Pages Function wraps it with KV and auth.
 import { buildIndex, retrieve, subgraph, transcriptWindow, transcriptUpTo } from './retrieve.js';
-import { composerPrompt, checkerPrompt, deeperPrompt, widgetPrompt } from './prompts.js';
+import { composerPrompt, checkerPrompt, deeperPrompt, widgetPrompt, lectureAnswerPrompt, lectureCheckPrompt } from './prompts.js';
 import { validateAnswer, validateCheck, validateDeeper, validateWidget, extractJson } from './schema.js';
 import { modelFor, fallbacksFor } from './models.js';
 import { chat, isMock, mockChat } from './client.js';
@@ -15,7 +15,10 @@ export class Brain {
     for (const d of docs) for (const n of d.notes) this.clusterOf.set(n.id, d.cluster);
     this.index = buildIndex(this.notes);
     this.ids = new Set(this.byId.keys());
+    this.sources = new Set(this.notes.flatMap(n => n.anchors.map(a => a.src)));
   }
+  // Does the brain know this video at all? If not, the desk works from the transcript alone.
+  covers(src) { return this.sources.has(src); }
 }
 
 const VALIDATORS = { answer: validateAnswer, check: validateCheck, deeper: validateDeeper, widget: validateWidget };
@@ -74,7 +77,12 @@ function context(brain, transcripts, { jot, source, t, thread }) {
 // answer: the quick pass from the notes. If the composer says the notes were
 // not enough, the desk escalates to the deeper pass on its own and returns
 // that instead — the panel never shows the insufficient one.
+// answer: the quick pass from the notes. If the composer says the notes were
+// not enough, the desk escalates to the deeper pass on its own and returns
+// that instead — the panel never shows the insufficient one. A video the
+// brain does not cover is answered from the transcript alone (fromLecture).
 export async function answer({ brain, transcripts, jot, source, t, thread, env, log, fetchImpl }) {
+  if (!brain.covers(source.id)) return lectureAnswer({ transcripts, jot, source, t, thread, env, log, fetchImpl });
   const ctx = context(brain, transcripts, { jot, source, t, thread });
   if (!ctx.notes.length) return { ok: false, error: 'nothing in the brain matches this note yet', retrieved: [] };
   const prompt = composerPrompt(ctx);
@@ -89,7 +97,31 @@ export async function answer({ brain, transcripts, jot, source, t, thread, env, 
   return { ...r, retrieved };
 }
 
+// Lecture-only: a wider window (±4 min), the deeper model when the quick one
+// says the window was not enough, and fromLecture on the reply.
+async function lectureAnswer({ transcripts, jot, source, t, thread, env, log, fetchImpl }) {
+  const tx = transcripts[source.id];
+  if (!tx) return { ok: false, error: 'no transcript for this video', retrieved: [] };
+  const known = { knownConcepts: new Set(['lecture']), knownSources: new Set([source.id]) };
+  const ctx = { jot, source: { id: source.id, title: source.title || tx.title }, t, thread: thread || [], window: transcriptWindow(tx, t, 240), notes: [], ...known };
+  const r = await run({ kind: 'answer', prompt: lectureAnswerPrompt(ctx), ctx, env, log, fetchImpl });
+  if (r.ok && r.value.enough === false) {
+    log?.(`answer ${jot.id}: lecture window not enough; escalating with the transcript so far`);
+    const wide = { ...ctx, window: transcriptUpTo(tx, t, 40000) };
+    const d = await run({ kind: 'answer', prompt: lectureAnswerPrompt(wide), ctx: wide, env: { ...env, TA_MODEL_COMPOSER: env.TA_MODEL_DEEPER || undefined }, log, fetchImpl });
+    if (d.ok) return { ...d, value: { ...d.value, fromLecture: true }, escalated: true, retrieved: [] };
+  }
+  return r.ok ? { ...r, value: { ...r.value, fromLecture: true }, retrieved: [] } : { ...r, retrieved: [] };
+}
+
 export async function check({ brain, transcripts, jot, source, t, env, log, fetchImpl }) {
+  if (!brain.covers(source.id)) {
+    const tx = transcripts[source.id];
+    if (!tx) return { ok: true, value: { verdict: 'ok' }, retrieved: [] };
+    const ctx = { jot, source: { id: source.id, title: source.title || tx.title }, t, window: transcriptWindow(tx, t, 240), notes: [], knownConcepts: new Set(['lecture']), knownSources: new Set([source.id]) };
+    const r = await run({ kind: 'check', prompt: lectureCheckPrompt(ctx), ctx, env, log, fetchImpl });
+    return r.ok && r.value.verdict === 'check' ? { ...r, value: { ...r.value, fromLecture: true }, retrieved: [] } : { ...r, retrieved: [] };
+  }
   const ctx = context(brain, transcripts, { jot, source, t });
   if (!ctx.notes.length) return { ok: true, value: { verdict: 'ok' }, retrieved: [] };
   const prompt = checkerPrompt(ctx);
@@ -110,8 +142,11 @@ export async function deeper({ brain, transcripts, jot, prior, source, t, thread
 }
 
 export async function widget({ brain, jot, reply, env, log, fetchImpl }) {
-  const note = brain.byId.get(reply?.concept) || brain.notes[0];
-  const cluster = brain.clusterOf.get(note.id);
+  const note = brain.byId.get(reply?.concept) || {
+    id: 'lecture', title: reply?.title || 'This idea', oneLiner: reply?.body?.split(/(?<=[.!?])\s/)[0] || '', explanation: reply?.body || reply?.correction || '',
+    wrongVersion: { claim: reply?.claim || '', tell: '' }, anchors: (reply?.cites || []).map(c => ({ ...c, quote: '' })), widgetHint: null,
+  };
+  const cluster = brain.clusterOf.get(note.id) || brain.docs[0].cluster;
   const ctx = { jot, reply, note, cluster, notes: [note] };
   const prompt = widgetPrompt(ctx);
   return run({ kind: 'widget', prompt, ctx, env, log, fetchImpl });

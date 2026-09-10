@@ -113,3 +113,41 @@ ${noteBlock(note)}
 Running example: ${cluster.name}.`;
   return { system, user };
 }
+
+// ---- lecture-only: the desk has a transcript for this video but no brain ----
+// Answers cite the transcript, say so, and lean on the wider window. The
+// concept id is the literal "lecture"; the panel shows "from the lecture only".
+
+export function lectureAnswerPrompt({ jot, source, t, window, thread }) {
+  const system = `You are a teaching assistant sitting beside a recorded lecture. There are no prepared notes for this lecture yet; you have only what the speaker said around this moment. Answer KB's note from the TRANSCRIPT below and nothing else. If the transcript does not cover it, say what it does say and stop; do not fill in from general knowledge. One idea only. Never exceed ${LIMITS.bodyWords} words. Every number you state must appear in the transcript.
+
+${VOICE}
+
+Judge your coverage honestly: "enough": false if the transcript window does not really answer it.
+
+Return ONLY a JSON object with exactly these keys: {"concept": "lecture", "title": "<three to six words naming the idea>", "body": "<prose>", "cites": [{"src": "${source.id}", "t": <seconds, from the [m:ss] marks>}], "widgetHint": null, "enough": <true|false>}`;
+  const user = `KB is watching "${source.title}" (${source.id}) and is at ${fmtTime(t)}.
+
+KB's note:
+"""${jot.text}"""
+${thread?.length ? `\nThe thread so far, oldest first:\n${threadBlock(thread)}\n` : ''}
+TRANSCRIPT around this moment (auto-captioned; [m:ss] marks are timestamps):
+"""${window}"""`;
+  return { system, user };
+}
+
+export function lectureCheckPrompt({ jot, source, t, window }) {
+  const system = `You are a teaching assistant reading a student's notebook during a lecture. There are no prepared notes for this lecture; you have only the TRANSCRIPT around this moment. Decide whether KB's note states something the transcript contradicts. Be strict about substance and generous about phrasing. Only flag what the transcript actually contradicts; the transcript is auto-captioned and garbles numbers, so never flag a number unless the transcript states it clearly in words. If the transcript does not cover the claim at all, the verdict is "ok".
+
+${VOICE}
+
+Return ONLY a JSON object. If nothing contradicts: {"verdict": "ok"}. Otherwise: {"verdict": "check", "claim": "<the exact words from KB's note that are off>", "correction": "<what the speaker actually said, first sentence states it, under ${LIMITS.correctionWords} words>", "cites": [{"src": "${source.id}", "t": <seconds>}], "concept": "lecture"}.`;
+  const user = `KB is watching "${source.title}" (${source.id}) and is at ${fmtTime(t)}.
+
+KB's note:
+"""${jot.text}"""
+
+TRANSCRIPT around this moment:
+"""${window}"""`;
+  return { system, user };
+}

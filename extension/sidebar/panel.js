@@ -5,7 +5,7 @@
 //
 // Renderer fields (kept in step with desk/contract.js — tests/contract.test.js
 // greps this file): concept title body cites widgetHint enough verdict claim
-// correction changed why inputs outputs compute note text.
+// correction changed why inputs outputs compute note text fromLecture.
 
 // Outside Firefox (npm run preview) there is no extension API. The shim gives
 // the panel an in-memory store and a fixed page state so the real UI can be
@@ -58,7 +58,7 @@ async function desk(path, { method = 'GET', body } = {}) {
     body: body ? JSON.stringify(body) : undefined,
   });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || `desk ${res.status}`);
+  if (!res.ok) throw new Error(data.error || `desk ${res.status}`);  // a 409 with needTranscript carries 'no transcript…'
   return data;
 }
 
@@ -115,7 +115,18 @@ async function pushNote(n) {
   catch (e) { n.status = 'local'; status(`desk: ${e.message}`); }
   await saveSession();
 }
-async function ask(mode, n, extra = {}) {
+// A video the desk has never seen: the desk tries to fetch the transcript
+// itself; if YouTube refuses the worker, the page script fetches it from
+// inside the tab and hands it over, then the ask is retried once.
+async function sendTranscript() {
+  if (tabId == null) return false;
+  status('Fetching the transcript from the page…');
+  let tx; try { tx = await api.tabs.sendMessage(tabId, { type: 'transcript' }); } catch (e) { tx = { error: e.message }; }
+  if (!tx || tx.error) { status(`No transcript: ${tx?.error || 'page did not answer'}`); return false; }
+  try { await desk('/api/transcript', { method: 'PUT', body: { source: page.videoId, title: tx.title, segments: tx.segments } }); status(''); return true; }
+  catch (e) { status(`desk: ${e.message}`); return false; }
+}
+async function ask(mode, n, extra = {}, retried = false) {
   if (!haveDesk()) return null;
   n.pending = mode; render();
   try {
@@ -124,6 +135,10 @@ async function ask(mode, n, extra = {}) {
     if (r.reply) session.replies.push(r.reply);
     return r.reply;
   } catch (e) {
+    if (!retried && /no transcript/i.test(e.message)) {
+      n.pending = null;
+      if (await sendTranscript()) return ask(mode, n, extra, true);
+    }
     session.replies.push({ id: `${n.id}-e${Date.now()}`, noteId: n.id, kind: 'error', at: new Date().toISOString(), error: e.message });
     return null;
   } finally { n.pending = null; await saveSession(); render(); }
@@ -174,15 +189,14 @@ function render() {
   $('main').hidden = !onSource || view !== 'main';
   $('settings').hidden = view !== 'settings';
   $('backBtn').hidden = view === 'main';
-  $('milestone').hidden = !onSource;
-  $('milestone').textContent = SOURCES[page.videoId] || 'Lecture';
+  $('milestone').hidden = !onSource || !SOURCES[page.videoId];
+  $('milestone').textContent = SOURCES[page.videoId] || '';
   $('srcTitle').textContent = page.title || page.videoId || '';
   $('srcTime').textContent = fmt(page.t || 0);
 
   const notes = session.notes;
-  // What still needs you: TA replies you have neither acked nor answered.
-  const open = notes.reduce((a, n) => a + awaiting(n).length, 0);
-  $('count').textContent = notes.length ? `${notes.length} note${notes.length === 1 ? '' : 's'}${open ? ` · ${open} awaiting you` : ''}` : '';
+  // Just the count. Acks and stars are reactions, not a queue you owe.
+  $('count').textContent = notes.length ? `${notes.length} note${notes.length === 1 ? '' : 's'}` : '';
 
   if (view === 'main') renderQueue(notes);
 }
@@ -254,6 +268,7 @@ function renderReply(n, r) {
   const at = citeLink(r.cites); if (at) who.appendChild(at);
   box.appendChild(who);
   if (r.title && r.kind !== 'check') box.appendChild(el('p', 'rtitle', r.title));
+  if (r.fromLecture) box.appendChild(el('p', 'why', 'From the lecture only, no notes for this video yet.'));
   if (TA_KINDS.includes(r.kind)) {
     const acked = (n.acks || []).includes(r.id);
     const b = el('button', 'ack' + (acked ? ' on' : ''), acked ? '👍 ok' : '👍');
