@@ -16,6 +16,7 @@
     "ext": "cd extension && zip -qr ../ta-extension.zip . -x '.*' && echo wrote ta-extension.zip",
     "deploy": "npx wrangler pages deploy site --project-name ta-kb",
     "preview": "python3 -m http.server 8790 --directory extension",
-    "benchmarks": "node scripts/benchmarks.mjs"
+    "benchmarks": "node scripts/benchmarks.mjs",
+    "notes": "node scripts/notes.mjs"
   }
 }

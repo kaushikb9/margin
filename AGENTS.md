@@ -70,8 +70,10 @@ scripts/
   bench.mjs                   run KB's real doubts through candidate models (needs a key)
   benchmarks.mjs              OpenRouter's benchmark aggregate joined to live prices (needs a key)
   export.mjs                  pull a session (notes + replies) from KV into sessions/
+  notes.mjs                   render a session file into class notes (notes/<video>-<date>.html)
 tests/                        node --test; the contract test greps the renderer
-sessions/                     exported session logs — the input to the class-notes artifact
+sessions/                     exported session logs — the input to the class-notes page
+notes/                        rendered class notes (gitignored; the artifact is the copy)
 ```
 
 ## State (KV, binding `TA_KV`)
@@ -119,6 +121,18 @@ and `TA_FALLBACK_<JOB>` as a comma list.
    addons.mozilla.org (free, no listing), install the signed `.xpi`. Zen
    blocks unsigned add-ons and ignores `xpinstall.signatures.required`.
 
+## After a session
+
+```sh
+TA_HOST=… TA_TOKEN=… npm run export 7xTGNNLPyMI     # KV → sessions/<video>/<date>.json
+npm run notes sessions/7xTGNNLPyMI/<date>.json      # → notes/<video>-<date>.html
+```
+
+Then publish the rendered page as a Claude artifact (the Artifact tool, from
+a session) — one artifact per session file. Nothing on the page is generated:
+the index lines are the replies' own first sentences, and every timestamp
+opens the lecture at that moment.
+
 ## Deploy
 
 ```sh
@@ -143,8 +157,11 @@ Without `OPENROUTER_API_KEY` the desk runs the mock model and says so in
   digest is the coupling.
 - Chapter-end break prompts, badges, unread counts, sounds. The panel never
   speaks first.
-- The class-notes artifact (a separate milestone; see
-  `~/Code/learn/learn-app-plan.md`). `sessions/` is its input.
+- The brain-post rendering of class notes. Decided 2026-09-10: one document
+  per session, threaded notebook as the spine with a concept index on top
+  (`scripts/notes.mjs`), published as a Claude artifact so widgets run. A
+  static copy for the brain waits on KB's call about the brain's no-script
+  rule; do not write one unasked.
 
 ## Learned the hard way
 
