@@ -37,9 +37,9 @@ let open = new Set();                        // expanded note ids
 let menu = null;                             // note id whose edit/delete row is showing
 let editing = null;                          // {id, text} while a note is being edited
 let confirmDelete = null;                    // note id after the first press of Delete
+const drafts = {};                            // note id → unsent follow-up text, survives re-renders
 let view = 'main';                           // main | settings
 let tabId = null;
-let tick = null;
 
 // ---------- storage ----------
 const store = {
@@ -74,26 +74,27 @@ let hasAccess = true;
 async function checkAccess() {
   try { hasAccess = api.permissions?.contains ? await api.permissions.contains(YT) : true; } catch { hasAccess = true; }
 }
-let lastMerge = 0;
-async function pollPage() {
-  // A fresh install, or a desk configured after the video loaded, must not
-  // sit on an empty queue: retry the merge every 15s until something lands.
-  if (haveDesk() && page.videoId && !session.notes.length && Date.now() - lastMerge > 15000) { lastMerge = Date.now(); mergeFromDesk(); }
+// Ask the page which video is open. Called on tab/navigation events and
+// once at start — never on a timer. Re-renders only when the video changed.
+async function refreshPage() {
   const tab = await activeTab();
   if (!tab) return setPage({ videoId: null });
   tabId = tab.id;
-  try {
-    const s = await api.tabs.sendMessage(tab.id, { type: 'state' });
-    setPage(s || { videoId: null });
-  } catch { setPage({ videoId: null }); }
+  try { const s = await api.tabs.sendMessage(tab.id, { type: 'state' }); setPage(s || { videoId: null }); }
+  catch { setPage({ videoId: null }); }
+}
+// The moment for a note: asked at Enter, not kept ticking.
+async function currentTime() {
+  if (tabId == null) return page.t || 0;
+  try { const s = await api.tabs.sendMessage(tabId, { type: 'state' }); if (s && typeof s.t === 'number') { page.t = s.t; page.title = s.title || page.title; } } catch {}
+  return page.t || 0;
 }
 async function setPage(s) {
   const changed = s.videoId !== page.videoId;
   page = { ...page, ...s };
-  if (changed) {
-    open = new Set();
-    if (page.videoId) { await loadSession(page.videoId); mergeFromDesk(); }
-  }
+  if (!changed) return;              // same video: nothing to redraw
+  open = new Set(); drafts && Object.keys(drafts).forEach(k => delete drafts[k]);
+  if (page.videoId) { await loadSession(page.videoId); mergeFromDesk(); }
   render();
 }
 async function seek(t) { if (tabId != null) try { await api.tabs.sendMessage(tabId, { type: 'seek', t }); } catch {} }
@@ -155,7 +156,8 @@ const isQuestion = text => QUESTION.test(text.trim());
 async function addNote(raw) {
   const text = raw.replace(/\s+/g, ' ').trim();
   const tags = isQuestion(text) ? ['#doubt'] : [];
-  const n = { id: uid(), t: page.t || 0, text, tags, createdAt: new Date().toISOString(), status: 'local' };
+  const t = await currentTime();
+  const n = { id: uid(), t, text, tags, createdAt: new Date().toISOString(), status: 'local' };
   session.notes.push(n); await saveSession(); render();
   await pushNote(n);
   await route(n);
@@ -198,13 +200,12 @@ const lastSubstantive = id => [...repliesFor(id)].reverse().find(r => ['answer',
 
 // ---------- render ----------
 function status(msg) { for (const id of ['deskStatus', 'mainStatus']) { const e = $(id); if (e) e.textContent = msg; } }
-const drafts = {};                            // note id → unsent follow-up text, survives re-renders
 function typing() { const a = document.activeElement; return a && a.tagName === 'TEXTAREA' && a.id !== 'jot' && $('queue').contains(a); }
 function render() {
   // The page poll ticks every 2s. While KB is typing in a reply or an edit
   // box, rebuilding the queue would throw the cursor out: update the clock
   // and nothing else until the box loses focus.
-  if (typing()) { $('srcTime').textContent = fmt(page.t || 0); return; }
+  if (typing()) return;
   const onSource = Boolean(page.videoId);
   $('noaccess').hidden = hasAccess || view === 'settings';
   $('offsource').hidden = onSource || !hasAccess || view === 'settings';
@@ -213,7 +214,6 @@ function render() {
   $('settings').hidden = view !== 'settings';
   $('backBtn').hidden = view === 'main';
   $('srcTitle').textContent = page.title || page.videoId || '';
-  $('srcTime').textContent = fmt(page.t || 0);
 
   const notes = session.notes;
   // Just the count. Acks and stars are reactions, not a queue you owe.
@@ -372,7 +372,7 @@ window.addEventListener('message', e => {
 async function loadSettings() { settings = await store.get('settings', settings); $('deskUrl').value = settings.deskUrl; $('deskToken').value = settings.token; }
 async function saveSettings() {
   settings = { deskUrl: $('deskUrl').value.trim(), token: $('deskToken').value.trim() };
-  await store.set('settings', settings); status('Saved.'); view = 'main'; render(); mergeFromDesk();
+  await store.set('settings', settings); status('Saved.'); view = 'main'; render(); await refreshPage(); mergeFromDesk();
 }
 async function testDesk() {
   try {
@@ -398,13 +398,16 @@ $('saveSettings').onclick = saveSettings;
 $('testDesk').onclick = testDesk;
 $('grantAccess').onclick = async () => {
   try { hasAccess = await api.permissions.request(YT); } catch (e) { status(`could not request access: ${e.message}`); }
-  render(); if (hasAccess) status('Allowed. Reload the lecture tab once.');
+  render(); if (hasAccess) { status('Allowed. Reload the lecture tab once.'); refreshPage(); }
 };
 
 (async () => {
   await loadSettings();
   await checkAccess();
-  await pollPage();
-  tick = setInterval(pollPage, 2000);
-  api.tabs.onActivated?.addListener(pollPage);
+  await refreshPage();
+  api.tabs.onActivated?.addListener(refreshPage);
+  api.tabs.onUpdated?.addListener((id, info) => { if (info.url || info.status === 'complete') refreshPage(); });
+  // A fresh install, or a desk configured after the video loaded, must not
+  // sit on an empty queue: one retry a while later, not a loop.
+  setTimeout(() => { if (haveDesk() && page.videoId && !session.notes.length) mergeFromDesk(); }, 15000);
 })();

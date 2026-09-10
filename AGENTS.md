@@ -235,10 +235,11 @@ page — the desk is a key-holder, a notebook and a sandbox, not a site.
   was never injected. `host_permissions` declares youtube.com so it appears
   under about:addons → Permissions, and the panel shows an *Allow on
   youtube.com* button (`permissions.request`) when access is missing.
-- **The 2s page poll re-renders the queue, and a rebuilt textarea loses its
-  cursor.** Typing in a reply box got cut off after two letters. `render()`
-  now updates only the clock while a queue textarea has focus, and drafts
-  are kept in memory so a re-render cannot eat them.
+- **Do not poll the page.** A 2s poll re-rendered the queue and threw the
+  cursor out of the reply box after two letters. The sidebar now asks the
+  page which video is open on tab events only, asks for the time at the
+  moment a note is sent, and has no ticking clock. Drafts are kept in
+  memory regardless.
 - **Firefox keeps extension CSS cached across a temporary-add-on reload.** A
   stylesheet change shipped with a script change rendered as new JS in the
   old layout. `panel.html` links `panel.css?v=N` and the css file's first
