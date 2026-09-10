@@ -11,9 +11,31 @@ precomputed concept brain anchored to the real transcript. Replies land
 collapsed under the note. Threads are conversations. A nightly job turns
 each video's notes into one post on KB's private blog (the brain).
 
-The storyboard, decided end to end: https://claude.ai/code/artifact/7dfc594b-d984-4b72-bb40-0de0aa744707
-The brain post as it will render: https://claude.ai/code/artifact/e003b712-e1c7-40a1-be1a-c3c9203a0441
-The design history and the original brief: `~/Code/learn/learn-app-plan.md`,
+## Artifacts, newest first
+
+Current — these two are the spec:
+
+- **The storyboard, decided end to end** (10 Sep, v7): open a lecture, write,
+  replies, stars, close the laptop, the brain updates itself, a new lecture;
+  plus what the desk is. All threads resolved.
+  https://claude.ai/code/artifact/7dfc594b-d984-4b72-bb40-0de0aa744707
+- **The brain post as it will render** (10 Sep, v2): one post per video in the
+  brain's own `post.css`, key concepts in KB's words, the margin thread,
+  widget stills. https://claude.ai/code/artifact/e003b712-e1c7-40a1-be1a-c3c9203a0441
+
+History — superseded in places, kept for the reasoning:
+
+- Class notes rendered from a real (mock-model) session, 10 Sep — the first
+  cut of the per-session page, before "one post per video" was decided.
+  https://claude.ai/code/artifact/e62ec9f0-4469-4505-b306-e24637c931bf
+- The class-notes milestone: three forms, model picks, storage (10 Sep).
+  https://claude.ai/code/artifact/743db42c-459f-4871-92f6-896d503c8c87
+- The original sidebar mockup, titled "TA" (9–10 Sep, v6): the interview's
+  outcome; the break, tags and Poke it shows were cut later.
+  https://claude.ai/code/artifact/0aaa12e2-4d34-48f3-b630-37c859c4e73c
+
+Sources for all five are in `~/Code/learn/learn-app-*.html`. The design
+history and the original brief: `~/Code/learn/learn-app-plan.md`,
 `~/Code/learn/learn-app-requirements.md`.
 
 ## Shipped (0.1.6, deployed at margin-3d0.pages.dev)
