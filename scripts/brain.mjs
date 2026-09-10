@@ -151,7 +151,10 @@ ${(n.replies || []).map(r => replyHtml(r, n)).filter(Boolean).map(h => '    ' + 
 const statements = notes.filter(n => !isQuestion(n.text));
 const questions = notes.length - statements.length;
 const corrected = statements.filter(n => lastCheck(n) && !n.overruled).length;
-const summary = `${tx ? `${Math.round((tx.segments.at(-1)?.t || 0) / 60)} minutes of lecture. ` : ''}My notes in the margin as I watched, the TA's replies under them${corrected ? `, and ${corrected === 1 ? 'one thing' : corrected + ' things'} I wrote down confidently that ${corrected === 1 ? 'was' : 'were'} wrong` : ''}. ${notes.length} notes, ${questions} of them questions.`;
+// The source: the video, with a one-line blurb when the brain knows it.
+let blurb = '';
+try { blurb = JSON.parse(readFileSync(join(root, 'site/brain/sources.json'), 'utf8')).sources.find(x => x.id === videoId)?.blurb || ''; } catch { /* none */ }
+const sourceHtml = `<a href="https://www.youtube.com/watch?v=${videoId}">${esc(title)}</a> on YouTube${blurb ? '. ' + esc(blurb) : ''}`;
 
 const html = `<!doctype html>
 <html lang="en">
@@ -170,7 +173,7 @@ const html = `<!doctype html>
 <header>
   <div class="date">Last added ${esc(day(lastDate))} · from ${esc(day(firstDate))}</div>
   <h1>${esc(title)}</h1>
-  <p class="summary">${esc(summary)}</p>
+  <p class="summary">${sourceHtml}</p>
 </header>
 
 <div class="keep">
