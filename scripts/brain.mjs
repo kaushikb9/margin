@@ -95,10 +95,23 @@ if (!summaryText) {
     const env = { OPENROUTER_API_KEY: key, ...process.env };
     const system = `KB starred these lines while studying a lecture: some are his own notes, some are a teaching assistant's replies. Write "the things to remember" from them: the few ideas that matter, each in one plain sentence, in KB's own voice (first person where the line is his). Use only what the lines say; no new facts, no numbers that are not in the lines. At most 6 sentences, under 120 words, no headings, no bullets, no em dashes. Return ONLY a JSON object: {"text": "<the sentences, separated by newlines>"}`;
     const user = starred.map((x, i) => `${i + 1}. [${x.who === 'ta' ? 'TA' : 'me'}] ${x.text}`).join('\n\n');
-    const r = await chat({ model: modelFor('deeper', env), system, user, job: 'deeper', env });
-    const m = r.content.match(/"text"\s*:\s*"((?:[^"\\]|\\.)*)"/s);
-    const text = m ? JSON.parse('"' + m[1] + '"').trim() : '';
-    if (!text || text.length > 1200 || /[<>]/.test(text)) { console.error(`brain: the summary came back unusable (${text.length} chars); nothing written`); process.exit(1); }
+    const words = t => t.trim().split(/\s+/).filter(Boolean).length;
+    const parse = c => { const m = c.match(/"text"\s*:\s*"((?:[^"\\]|\\.)*)"/s); try { return m ? JSON.parse('"' + m[1] + '"').trim() : ''; } catch { return ''; } };
+    let r = await chat({ model: modelFor('deeper', env), system, user, job: 'deeper', env });
+    let text = parse(r.content);
+    if (words(text) > 120) {
+      // Once more, with the overrun named. Models treat "under 120 words" as advice.
+      r = await chat({ model: modelFor('deeper', env), system, user: `${user}\n\nYour previous reply was ${words(text)} words. The limit is 120. Keep the ${Math.min(6, text.split(/\n+/).length)} most important sentences and cut the rest.`, job: 'deeper', env });
+      const again = parse(r.content); if (again) text = again;
+    }
+    if (!text || /[<>]/.test(text)) { console.error('brain: the summary came back empty or unusable; nothing written'); process.exit(1); }
+    if (words(text) > 120) {
+      // Still over: keep whole sentences up to the limit rather than refuse.
+      const lines = []; let n = 0;
+      for (const l of text.split(/\n+/)) { const w = words(l); if (n + w > 120 && lines.length) break; lines.push(l); n += w; }
+      console.error(`brain: summary was ${words(text)} words after a retry; kept the first ${lines.length} lines (${n} words)`);
+      text = lines.join('\n');
+    }
     summaryText = text;
     writeFileSync(cachePath, JSON.stringify({ hash: starHash, text, model: r.model, at: new Date().toISOString() }, null, 1));
   }
