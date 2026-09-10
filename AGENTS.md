@@ -1,35 +1,38 @@
 # margin — a study companion in the margin of the lecture
 
-**Run · verify · deploy**
+## Run · verify · deploy
 
 ```sh
 npm run dev        # desk on :8789 with the mock model and a local KV; no key needed
-npm test           # ~0.3s, no network: brain contract + 38 unit tests
+./check.sh         # ~0.5s, no network: brain contract + 41 unit tests (npm test is the same)
 npm run preview    # the sidebar as a plain page on :8790, driven by a shim (design review)
-npm run deploy     # only when KB asks
+npm run deploy     # runs ./check.sh first, refuses on red; only when KB asks
 ```
 
 margin is a Firefox sidebar that sits beside a YouTube lecture. (Named 2026-09-10; was "ta". The assistant that replies is still called the TA; `TA_*` env names, `x-ta-token` and the `TA_KV` binding are unchanged.) KB jots notes as
-he watches; nothing interrupts. A note with **Ask the TA** ticked gets an
-answer; every note gets the silent check against a **precomputed concept
-brain**, which speaks only when a claim contradicts the lecture. Each reply
+he watches; nothing interrupts. A note that reads as a question (or ends in
+"?") gets an answer; every other note gets the silent check against a
+**precomputed concept brain**, which speaks only when a claim contradicts
+the lecture. (No checkbox, no tags, since 0.1.6 WIP: `isQuestion` in
+`panel.js` decides.) Each reply
 lands as one muted line under the note. A thread is a conversation: a
 follow-up is answered with the thread in view, and when the notes are not
 enough the desk escalates to the reasoning model on its own (`enough: false`
-from the composer). *Poke at it* builds a widget on press. There is no
-break, no session, no end: the brain post is regenerated from whatever is
-in KV.
+from the composer). Asking to be shown something ("show me", "slider") in
+a follow-up builds a widget as the reply. ☆ stars mark a thing to remember;
+a star on a reply also acks it. There is no break, no session, no end: the
+brain post is regenerated from whatever is in KV.
 
-Built 2026-09-10 from `~/Code/learn/learn-app-plan.md` and the mockup at
+Built 2026-09-10 from `docs/history/learn-app-plan.md` and the mockup at
 https://claude.ai/code/artifact/0aaa12e2-4d34-48f3-b630-37c859c4e73c (titled "TA" — the name changed after). The
-brief that started it is `~/Code/learn/learn-app-requirements.md`.
+brief that started it and every mockup are in `docs/history/`.
 
 ## Hard boundaries
 
 - **Does not touch the study tracker.** `~/Code/learn` (`plan.json`, the
-  tracker template and artifact) is a separate working thing. The only
-  coupling is one-way: **End session** copies a digest to the clipboard that
-  KB pastes into the tracker's note by hand. Nothing here writes there.
+  tracker template and artifact) is a separate working thing. There is
+  no coupling: End session and the clipboard digest were cut in 0.1.4.
+  Nothing here writes there.
 - **Static site, no framework, no build step, no CDNs.** Pages Functions +
   KV. The extension is plain files; `npm run ext` only zips them.
 - **No Anthropic key.** Models come through OpenRouter (`desk/models.js`).
@@ -39,6 +42,13 @@ brief that started it is `~/Code/learn/learn-app-requirements.md`.
 - **Answers are one concept, cited, under 170 words, no lists.** Enforced by
   `desk/schema.js`, stated in `desk/prompts.js`. An answer that reads as an
   article is a bug.
+
+## Two things called "the brain"
+
+Inside this repo "the brain" is `site/brain/*.json`, the concept notes the
+TA answers from. Everywhere else on this machine "the brain" is
+`~/Code/brain`, KB's private blog. When this repo writes posts there, say
+"the blog" or "brain.kaushikbhat.com" in code and docs to keep them apart.
 
 ## Layout
 
@@ -180,8 +190,8 @@ page — the desk is a key-holder, a notebook and a sandbox, not a site.
   model and the brain post. Chapter-end prompts, badges, sounds: never.
 - **Surfacing closed sessions in brain.kaushikbhat.com.** KB's parked todo
   (2026-09-10): the brain repo restructured as plan (optional) → topic
-  (video/paper/essay) → session, with the notes page under it. Needs its own
-  Claude session; scope in `~/Code/learn/learn-app-plan.md` under "Todo".
+  (video/paper/essay) → session, with the notes page under it. Scope in
+  `docs/history/learn-app-plan.md` under "Todo".
   Until then class notes are Claude artifacts only (`scripts/notes.mjs`),
   and nothing is written into `~/Code/brain`.
 

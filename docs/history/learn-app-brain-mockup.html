@@ -1,0 +1,241 @@
+<title>Deep Dive into LLMs in the brain</title>
+<style>
+/* tokens.css — verbatim */
+:root { --bg:#faf8f4; --ink:#1c1b18; --muted:#78736a; --line:#e6e1d7; --card:#ffffff; --gold:#a8720a; --gold-soft:#f4ead2; --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif; --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif; --t-body:17px; --t-item:15.5px; --t-second:15px; --t-caption:13px; color-scheme: light dark; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#131210; --ink:#e8e4dc; --muted:#8f887c; --line:#2a2721; --card:#1b1916; --gold:#e0b04f; --gold-soft:#2e2718; } }
+:root[data-theme="dark"] { --bg:#131210; --ink:#e8e4dc; --muted:#8f887c; --line:#2a2721; --card:#1b1916; --gold:#e0b04f; --gold-soft:#2e2718; }
+.eyebrow { font-size:var(--t-caption); text-transform:uppercase; letter-spacing:0.06em; font-weight:600; color:var(--muted); }
+
+/* post.css — verbatim from ~/Code/brain/site/post.css, scoped under .page */
+*{box-sizing:border-box;margin:0}
+html{background:var(--bg)}
+body{background:var(--bg); color:var(--ink); font:400 var(--t-body)/1.6 var(--sans); -webkit-font-smoothing:antialiased;}
+.page{max-width:40rem; margin:0 auto; padding:2.25rem 1.15rem 4rem}
+a{color:inherit; text-decoration:none} a:hover{color:var(--gold)}
+.mast{display:flex; align-items:baseline; justify-content:space-between; gap:1rem; margin-bottom:2.25rem}
+.mast .wordmark{font:600 20px/1 var(--serif); letter-spacing:-.01em} .mast .wordmark .dot{color:var(--gold)} .mast .sub{color:var(--muted); font-size:var(--t-caption)}
+.month{margin:0 0 1.75rem} .month .eyebrow{display:block; margin-bottom:.55rem}
+.posts{list-style:none; padding:0}
+.posts li{display:grid; grid-template-columns:3.6rem 1fr; column-gap:.75rem; padding:.65rem 0; border-top:1px solid var(--line)} .posts li:last-child{border-bottom:1px solid var(--line)}
+.posts .day{color:var(--muted); font-size:var(--t-second); font-variant-numeric:tabular-nums; padding-top:.1rem}
+.posts .title{font-weight:600; font-size:var(--t-body); text-wrap:balance} .posts .why{color:var(--muted); font-size:var(--t-second); line-height:1.45; margin-top:.15rem}
+.post header{margin-bottom:2rem}
+.post .date{color:var(--muted); font-size:var(--t-caption); font-variant-numeric:tabular-nums; margin-bottom:.6rem}
+.post h1{font:600 30px/1.2 var(--serif); letter-spacing:-.012em; text-wrap:balance; margin-bottom:.6rem}
+.post .summary{color:var(--muted); font-size:var(--t-body); line-height:1.5}
+.post h2{font-size:var(--t-body); font-weight:700; margin:2rem 0 .6rem}
+.post p, .post ul{margin:0 0 1.1rem} .post ul{padding-left:1.25rem} .post li{margin-bottom:.35rem} .post strong{font-weight:650}
+.post code{font:400 14.5px/1.5 ui-monospace,"SF Mono",Menlo,Consolas,monospace; background:var(--gold-soft); padding:.1em .35em; border-radius:4px}
+.post blockquote{margin:0 0 1.25rem; padding:0 0 0 1rem; border-left:2px solid var(--line); color:var(--muted)}
+.post figure{margin:0 0 1.25rem} .post figcaption{color:var(--muted); font-size:var(--t-caption); margin-top:.4rem}
+.post table{border-collapse:collapse; width:100%; font-size:var(--t-second); margin:0 0 1.25rem; font-variant-numeric:tabular-nums}
+.post th,.post td{text-align:left; padding:.4rem .6rem .4rem 0; border-bottom:1px solid var(--line); vertical-align:top}
+.post th{font-weight:600; color:var(--muted); font-size:var(--t-caption); text-transform:uppercase; letter-spacing:.06em}
+.keep{margin:2rem 0 0; padding:1rem 1.1rem; border-left:3px solid var(--gold); background:var(--gold-soft); border-radius:0 6px 6px 0} .keep .eyebrow{display:block; color:var(--gold); margin-bottom:.35rem} .keep p{margin:0}
+.post footer{margin-top:3rem; padding-top:1rem; border-top:1px solid var(--line); font-size:var(--t-second); color:var(--muted)}
+
+/* ---- proposed additions to post.css (v2): the margin thread ---- */
+.thread{list-style:none; padding:0; margin:0 0 1.25rem}
+.thread>li{padding:.9rem 0; border-top:1px solid var(--line)}
+.thread>li:last-child{border-bottom:1px solid var(--line)}
+.thread .at{color:var(--muted); font-size:var(--t-caption); font-variant-numeric:tabular-nums; margin-bottom:.25rem; display:block}
+.thread .at a:hover{color:var(--gold)}
+.thread .me{font:400 var(--t-body)/1.5 var(--serif); margin:0 0 .3rem}
+.thread .tag{font-size:var(--t-caption); color:var(--ink); background:var(--gold-soft); border-radius:999px; padding:.02rem .5rem; font-family:var(--sans); vertical-align:middle}
+.thread .ta{margin:.5rem 0 0; padding:0 0 0 .9rem; border-left:2px solid var(--line); font-size:var(--t-second); line-height:1.6}
+.thread .ta.check{border-left-color:var(--gold)}
+.thread .ta .who{display:block; font-size:var(--t-caption); color:var(--muted); margin-bottom:.25rem} .thread .ta .who b{color:var(--ink)} .thread .ta.check .who b{color:var(--gold)}
+.thread .ta p{margin:0 0 .5rem} .thread .ta .cite{font-size:var(--t-caption); color:var(--muted); border:1px solid var(--line); border-radius:4px; padding:.02rem .4rem; margin-right:.3rem; font-variant-numeric:tabular-nums}
+.still{margin:.6rem 0 0; padding:.6rem .7rem; border:1px solid var(--line); border-radius:6px; background:var(--card)}
+.still .wname{font-size:var(--t-caption); font-weight:600; margin-bottom:.4rem}
+.still .bar{display:grid; grid-template-columns:5.5rem 1fr 3rem; align-items:center; gap:.5rem; font-size:var(--t-caption); margin:.15rem 0}
+.still .bar .tok{font-family:ui-monospace,Menlo,monospace} .still .meter{height:.65rem; background:var(--line); border-radius:2px; overflow:hidden} .still .meter i{display:block; height:100%; background:var(--gold)} .still .pct{text-align:right; color:var(--muted); font-variant-numeric:tabular-nums} .still .bar.top .tok{font-weight:600}
+.still figcaption{margin-top:.5rem}
+
+/* review chrome, not part of the brain */
+.frame{border:1px solid var(--line); border-radius:8px; background:var(--bg); margin:0 auto 3rem; max-width:46rem}
+.frame .bar{display:flex; align-items:center; gap:.6rem; padding:.5rem .75rem; border-bottom:1px solid var(--line); background:var(--card); font-size:var(--t-caption); color:var(--muted)}
+.frame .bar .url{flex:1; background:var(--bg); border:1px solid var(--line); border-radius:999px; padding:.15rem .7rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.review{max-width:46rem; margin:0 auto; padding:2.25rem 1.15rem 1.5rem; display:flex; flex-direction:column; gap:.4rem}
+.review h1{font-size:20px} .review p{color:var(--muted); font-size:var(--t-second); max-width:40rem}
+.notes{max-width:46rem; margin:0 auto; padding:0 1.15rem 4rem; color:var(--muted); font-size:var(--t-second)}
+.notes ul{padding-left:1.15rem} .notes li{margin:.25rem 0}
+.notes b{color:var(--ink)}
+</style>
+
+<div class="review">
+  <p class="eyebrow">Mockup · 10 September 2026</p>
+  <h1>Deep Dive into LLMs, as a brain post</h1>
+  <p>One topic, one post: the Deep Dive video is a single page, however many sittings it took. Notes appear in lecture order; the timestamps are the only trace of when. Below: the index row on brain.kaushikbhat.com, then the post itself, rendered in the brain’s own post.css from the real replies GLM gave in tonight’s bench.</p>
+</div>
+
+<!-- ===================== INDEX ===================== -->
+<div class="frame">
+  <div class="bar"><span class="url">brain.kaushikbhat.com</span></div>
+  <div class="page">
+    <header class="mast"><a class="wordmark" href="#">brain<span class="dot">.</span></a><span class="sub">things worth reading twice</span></header>
+    <section class="month">
+      <span class="eyebrow">September 2026</span>
+      <ul class="posts">
+        <li>
+          <span class="day">10 Sep</span>
+          <div>
+            <a class="title" href="#post">Deep Dive into LLMs like ChatGPT</a>
+            <div class="why">Karpathy’s lecture with my notes in the margin: 21 notes, 8 concepts, two of my own claims corrected.</div>
+          </div>
+        </li>
+        <li>
+          <span class="day">05 Sep</span>
+          <div>
+            <a class="title" href="#">A Range boundary on an element counts children, not characters</a>
+            <div class="why">Why select-all and double-click silently broke text anchoring, and the one function that fixed it.</div>
+          </div>
+        </li>
+      </ul>
+    </section>
+  </div>
+</div>
+
+<!-- ===================== POST ===================== -->
+<div class="frame" id="post">
+  <div class="bar"><span class="url">brain.kaushikbhat.com/posts/deep-dive-into-llms-like-chatgpt</span></div>
+  <div class="page post">
+    <header>
+      <div class="date">Last added 10 September 2026 · from 5 September</div>
+      <h1>Deep Dive into LLMs like ChatGPT</h1>
+      <p class="summary">Andrej Karpathy, 3h31m. My notes in the margin as I watched, the TA’s replies under them, and the two things I wrote down confidently that were wrong. 21 notes so far, 8 concepts touched; the lecture is not finished.</p>
+    </header>
+
+    <h2>Key concepts</h2>
+    <p>In my own words, from the margin, with the two I had wrong put right.</p>
+    <ul>
+      <li>Tokens look like numbers but they are unique ids, symbols for a slice of text. A token can be a word, a slice of a word, whitespace, punctuation. The model never sees characters.</li>
+      <li>Parameters are the weights — knobs on a DJ set, tweaked during training until the predictions come out right. 8B is how many knobs.</li>
+      <li>Inference is the job of predicting the next token: token → network → probabilities → sample → next token. Nothing is learned while it runs.</li>
+      <li>Temperature is how adventurous the sampling is. <strong>Low temperature is repeatable, not accurate</strong> — the ranking never changes, only how far down the list the coin reaches.</li>
+      <li>A base model is xx parameters trained on yy tokens: Llama 3.1 405B on <strong>15 trillion</strong> tokens. It is an internet document simulator, not an assistant.</li>
+      <li>Releasing a model is the code plus the parameters. The tokenizer ships as code with its vocabulary; the training text does not ship.</li>
+      <li>There are two stages, not three. Pre-training <em>is</em> the training; post-training on conversations makes the assistant. Same mechanism, different data.</li>
+      <li>In-context learning is the same thing as the examples in a system prompt: a pattern the model completes inside the window, not an instruction it follows and not something it keeps.</li>
+      <li>Saying “I don’t know” is not a list of unknown facts. It is a learned habit: an internal signal that tends to be present when it is guessing, routed to the refusal words by post-training. It fails in both directions.</li>
+      <li>Tools are trained, not wired: a special token the model learns to emit, an external loop that runs the search and pastes the result back into the context.</li>
+      <li>Knowledge in parameters = vague memory. Knowledge in the tokens of the context window = working memory.</li>
+    </ul>
+
+    <h2>In the margin</h2>
+    <ul class="thread">
+      <li id="n27">
+        <span class="at"><a href="https://www.youtube.com/watch?v=7xTGNNLPyMI&t=1625s">27:05</a></span>
+        <p class="me">Temperature = how much tolerance we have with the probability. low temperature = higher accuracy <span class="tag">#til</span></p>
+        <div class="ta check">
+          <span class="who"><b>Check this</b></span>
+          <p>Low temperature makes the model more repeatable, not more accurate. Temperature reshapes the probability distribution before the coin flip: low makes it peakier, so the top token gets picked almost every time; high makes it flatter, so less likely tokens get real chances. The ranking of tokens never changes. If the top token is wrong, low temperature just gives you that wrong token every time with more confidence. Accuracy comes from the model’s weights and the context, not from the temperature dial.</p>
+          <p><span class="cite">26:47</span></p>
+          <figure class="still">
+            <div class="wname">Temperature reshapes the lottery · at 0.7</div>
+            <div class="bar top"><span class="tok">cand 1 (logit 4)</span><span class="meter"><i style="width:64.4%"></i></span><span class="pct">64.4%</span></div>
+            <div class="bar"><span class="tok">cand 2 (logit 3)</span><span class="meter"><i style="width:23.7%"></i></span><span class="pct">23.7%</span></div>
+            <div class="bar"><span class="tok">cand 3 (logit 2)</span><span class="meter"><i style="width:8.7%"></i></span><span class="pct">8.7%</span></div>
+            <div class="bar"><span class="tok">cand 4 (logit 1)</span><span class="meter"><i style="width:3.2%"></i></span><span class="pct">3.2%</span></div>
+            <figcaption>Slide the temperature: the bars reorder never, only their heights change. This is the widget at rest; <a href="#">move it in the live notes</a>.</figcaption>
+          </figure>
+        </div>
+      </li>
+
+      <li id="n44">
+        <span class="at"><a href="https://www.youtube.com/watch?v=7xTGNNLPyMI&t=2670s">44:30</a></span>
+        <p class="me">its just the parameters? where are the tokens? it needs to be somewhere as part of the release right so that whenever a new word comes in, it knows what is the relevant token for that? <span class="tag">#doubt</span></p>
+        <div class="ta">
+          <span class="who"><b>TA</b> · What a model release contains</span>
+          <p>The release is two files: the Python code describing the network, and the file of parameter values. The tokens you are thinking of, the training text, are not shipped at all. What ships instead is the tokenizer, a small piece of code plus its vocabulary table. That tokenizer knows how to chop any new text into ids and turn ids back into text, exactly the way the model saw text during training. So a new word comes in, the tokenizer maps it to ids, the formula runs with the released numbers, and tokens come out. The knowledge lives in the parameters, not in any stored text.</p>
+          <p><span class="cite">44:10</span><span class="cite">44:20</span></p>
+        </div>
+      </li>
+
+      <li id="n46">
+        <span class="at"><a href="https://www.youtube.com/watch?v=7xTGNNLPyMI&t=2790s">46:30</a></span>
+        <p class="me">So what is a base model? xx parameters trained on yy tokens. Llama 3 (2024) is 405 billion parameters trained on 15 million tokens</p>
+        <div class="ta check">
+          <span class="who"><b>Check this</b></span>
+          <p>The token count is 15 trillion, not 15 million. The biggest Llama 3.1 base model is 405 billion parameters, trained on 15 trillion tokens. A million is a thousand times smaller than a billion, so 15 million tokens would be tiny, like a small book collection, while 15 trillion is the whole internet-scale training corpus. The parameter count you wrote is right.</p>
+          <p><span class="cite">46:27</span><span class="cite">14:45</span></p>
+        </div>
+      </li>
+
+      <li id="n51">
+        <span class="at"><a href="https://www.youtube.com/watch?v=7xTGNNLPyMI&t=3090s">51:30</a></span>
+        <p class="me">in his notes he says “a lot of the world knowledge” is stored in the parameters of the network - what? how? <span class="tag">#doubt</span></p>
+        <div class="ta">
+          <span class="who"><b>TA</b> · Knowledge in weights vs knowledge in context</span>
+          <p>Nothing is stored and looked up. Your phone keyboard has no list of your sentences in it. It has a pile of numbers that were nudged, over millions of messages, until its guesses got good. Type “I’ll be there in five” and it offers “minutes” not because “minutes” is filed anywhere, but because the numbers came out that way. An LLM is the same trick at scale. Training left the weights shaped so that true-ish continuations are more likely than false ones. Karpathy calls it a lossy compression of the internet, a zip file with a lot lost. So a wrong answer arrives in the same confident voice as a right one, because there is no lookup that could miss. Anything actually in the context window is different: the model can read it directly, like rereading a page. Weights are what it half-remembers; context is what is in front of it.</p>
+          <p><span class="cite">51:28</span><span class="cite">50:15</span><span class="cite">1:39:43</span></p>
+        </div>
+      </li>
+
+      <li id="n56">
+        <span class="at"><a href="https://www.youtube.com/watch?v=7xTGNNLPyMI&t=3370s">56:10</a></span>
+        <p class="me">Psychology of a base model. in context learning ability? how? — is this similar to the good/bad examples we give in the system prompt? <span class="tag">#doubt</span></p>
+        <div class="ta">
+          <span class="who"><b>TA</b> · In-context learning and few-shot prompts</span>
+          <p>Yes, that is the same idea. In-context learning means the model picks up a pattern from what is in its window and continues it, with no weights changing. Karpathy shows it with ten English-to-Korean word pairs, then a new English word, and the base model completes with the Korean. The examples in a system prompt work the same way: they are not instructions the model follows, they are a pattern the model completes. Same trick, just used to make a base model act like an assistant. Nothing is learned in the training sense; the knobs stay frozen and the pattern only lives inside this one completion.</p>
+          <p><span class="cite">56:08</span><span class="cite">57:14</span></p>
+        </div>
+      </li>
+
+      <li id="n59">
+        <span class="at"><a href="https://www.youtube.com/watch?v=7xTGNNLPyMI&t=3570s">59:30</a></span>
+        <p class="me">pre-training (data gathering and cleaning) -> training (parmeters + transformers etc .. but is there something called as training or everything is pre-training?) -> base model (internet document simulator) -> post training <span class="tag">#doubt</span></p>
+        <div class="ta">
+          <span class="who"><b>TA</b> · Pretraining vs post-training</span>
+          <p>There is no separate stage called training. There are two stages. Pretraining is the training: months of next-token prediction on a huge internet pile, and its output is the base model, like your keyboard tuned on millions of messages. Post-training is a second, much cheaper pass on a small hand-built set of conversations, so the same model learns to answer questions instead of continuing web pages. Same mechanism, different data. So pretraining is not something before training; it is the training.</p>
+          <p><span class="cite">59:45</span><span class="cite">1:01:02</span></p>
+        </div>
+      </li>
+
+      <li id="n90">
+        <span class="at"><a href="https://www.youtube.com/watch?v=7xTGNNLPyMI&t=5400s">1:30:00</a></span>
+        <p class="me">we are just creating datasets to tell it when to say no. so how does it know that the next question it doesnt know the answer to is actually not in its training set? is it just a function similar to spaced repitition of types? <span class="tag">#doubt</span></p>
+        <div class="ta">
+          <span class="who"><b>TA</b> · How a model learns to say “I don’t know”</span>
+          <p>It does not know, not directly. It never checks a new question against a list of unknown facts, and it is not spaced repetition. What happens is this: take a fact, generate questions about it, ask the model the same question a few times, and use another LLM as judge to compare its answers to the truth. Where it is consistently wrong, you add training conversations whose correct answer is “I don’t know”. The network already has an internal state that tends to be present when it is guessing, a rough model of its own self-knowledge. Post-training teaches it to route that state to the refusal words. So it is a learned habit, a correlate of uncertainty, which is why it fails in both directions. Keyboard version: it cannot know a word is outside your vocabulary, but it can learn that when its top three suggestions are all weak, offering nothing beats offering junk.</p>
+          <p><span class="cite">1:26:30</span><span class="cite">1:27:01</span><span class="cite">1:29:30</span></p>
+        </div>
+      </li>
+
+      <li id="n93">
+        <span class="at"><a href="https://www.youtube.com/watch?v=7xTGNNLPyMI&t=5630s">1:33:50</a></span>
+        <p class="me">mitigation 2: allow usage of tools like web search. how do you tell the models to use these tools? again do via training sets <span class="tag">#doubt</span></p>
+        <div class="ta">
+          <span class="who"><b>TA</b> · Tool use is trained, not wired</span>
+          <p>You have it right: it is done via training sets. There is no tool-calling machinery inside the model. Instead, new special tokens are introduced, like a search token, with a format for using them. In post-training, conversations include examples where the assistant emits that token with a query, an external program runs the search, and the results are pasted back into the context window. The model learns from those examples when emitting the token tends to be right. The payoff is that instead of a vague recollection in the weights, the answer becomes text in the context, which the model reads directly, like working memory.</p>
+          <p><span class="cite">1:33:38</span><span class="cite">1:35:12</span></p>
+        </div>
+      </li>
+
+      <li>
+        <span class="at"><a href="https://www.youtube.com/watch?v=7xTGNNLPyMI&t=5990s">1:39:50</a></span>
+        <p class="me">recap: knowledge in parameters = vague memory. knowledge in tokens of context window = working memory <span class="tag">#key</span></p>
+      </li>
+    </ul>
+    <p><em>Thirteen more notes without replies — the ones the TA read and left alone — sit in the thread between these; shown here elided so the shape is visible.</em></p>
+
+    <div class="keep">
+      <span class="eyebrow">The thing to remember</span>
+      <p>Weights are what the model half-remembers; the context window is what is in front of it. Temperature changes neither — it only changes how adventurous the coin is.</p>
+    </div>
+
+    <footer><a href="#">← All posts</a></footer>
+  </div>
+</div>
+
+<div class="notes">
+  <p class="eyebrow" style="margin-bottom:.5rem">What this commits to</p>
+  <ul>
+    <li><b>One post per resource, one file.</b> <code>site/posts/deep-dive-into-llms-like-chatgpt.html</code>, regenerated from all sessions on that video, in lecture order. The date line says when it was last added to; that is the only session trace. No dated filename, because the file is not a moment.</li>
+    <li><b>Rendered by margin, committed by you.</b> <code>npm run brain 7xTGNNLPyMI</code> merges every <code>sessions/7xTGNNLPyMI/*.json</code>, writes the post and the index row, runs the brain’s <code>npm test</code>. The brain runs nothing.</li>
+    <li><b>No scripts.</b> The widget is a still: the renderer runs its <code>compute</code> once at the defaults in node and emits the bars as plain HTML. The caption links to the live notes for the version you can move. The brain’s rule is untouched.</li>
+    <li><b>Twelve lines added to post.css</b> (<code>.thread</code>, <code>.still</code>), bumped to <code>?v=2</code>. Shared, not inline, because every resource post uses them.</li>
+    <li><b>Key concepts are your notes, not a summary.</b> One bullet per substantive note, your wording kept, a checked claim shown corrected in bold. No table, no model prose above the thread. The <code>keep</code> block is whichever note you tagged <code>#key</code>; if none, the post fails the brain’s test rather than inventing one.</li>
+    <li><b>Notes with no reply stay in.</b> They are your record; the TA’s silence is the record of their being fine.</li>
+  </ul>
+</div>

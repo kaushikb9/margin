@@ -1,0 +1,357 @@
+<title>TA Class Notes</title>
+<style>
+/* kb design tokens — copied verbatim from ~/Code/brain/design-system/tokens.css */
+:root {
+  --bg:        #faf8f4;
+  --ink:       #1c1b18;
+  --muted:     #78736a;
+  --line:      #e6e1d7;
+  --card:      #ffffff;
+  --gold:      #a8720a;
+  --gold-soft: #f4ead2;
+  --sans:  -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --mono:  ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --t-body:    17px;
+  --t-item:    15.5px;
+  --t-second:  15px;
+  --t-caption: 13px;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not([data-theme="paper"]) {
+    --bg: #131210; --ink: #e8e4dc; --muted: #8f887c; --line: #2a2721;
+    --card: #1b1916; --gold: #e0b04f; --gold-soft: #2e2718;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="paper"], :root[data-theme="light"] { color-scheme: light; }
+:root[data-theme="ink"], :root[data-theme="dark"] {
+  --bg: #131210; --ink: #e8e4dc; --muted: #8f887c; --line: #2a2721;
+  --card: #1b1916; --gold: #e0b04f; --gold-soft: #2e2718;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { background: var(--bg); }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 400 var(--t-body)/1.6 var(--sans); -webkit-font-smoothing: antialiased; }
+main { max-width: 54rem; margin: 0 auto; padding: 2.5rem 1.25rem 5rem; display: flex; flex-direction: column; gap: 3.25rem; }
+p { margin: 0; }
+h1, h2, h3 { margin: 0; text-wrap: balance; font-weight: 600; }
+h1 { font-size: 20px; } h2 { font-size: var(--t-body); } h3 { font-size: var(--t-item); }
+ul { margin: 0; padding-left: 1.15rem; } li { margin: 0.2rem 0; }
+a { color: inherit; text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
+code { font: 0.88em var(--mono); background: var(--gold-soft); padding: 0.05em 0.3em; border-radius: 3px; }
+.eyebrow { font-size: var(--t-caption); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; color: var(--muted); }
+.caption { font-size: var(--t-caption); color: var(--muted); }
+.second { font-size: var(--t-second); color: var(--muted); }
+.stack { display: flex; flex-direction: column; gap: 0.85rem; }
+.sec-head { display: flex; flex-direction: column; gap: 0.3rem; max-width: 40rem; }
+.sec-head .why { font-size: var(--t-second); color: var(--muted); }
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: var(--t-second); }
+th, td { text-align: left; vertical-align: top; padding: 0.55rem 0.9rem 0.55rem 0; border-top: 1px solid var(--line); }
+th { font-size: var(--t-caption); color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; border-top: 0; }
+td.q { font-weight: 600; white-space: nowrap; } td.n { color: var(--muted); }
+td code { white-space: nowrap; }
+pre { margin: 0; overflow-x: auto; font: 0.78rem/1.55 var(--mono); background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 0.75rem 0.85rem; }
+
+/* option frames */
+.opt { border: 1px solid var(--line); border-radius: 8px; background: var(--card); overflow: hidden; }
+.opt .bar { display: flex; align-items: baseline; gap: 0.6rem; padding: 0.55rem 0.9rem; border-bottom: 1px solid var(--line); background: var(--bg); font-size: var(--t-caption); color: var(--muted); }
+.opt .bar b { color: var(--ink); font-size: var(--t-item); }
+.opt .bar .rec { margin-left: auto; color: var(--gold); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; font-size: 11px; }
+.opt .body { padding: 1rem 1.1rem; display: flex; flex-direction: column; gap: 0.7rem; }
+.verdict { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem 1.5rem; font-size: var(--t-second); }
+@media (max-width: 600px) { .verdict { grid-template-columns: 1fr; } }
+.verdict .k { font-size: var(--t-caption); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; color: var(--muted); }
+.verdict p { color: var(--muted); }
+
+/* A: annotated lecture */
+.lec { display: grid; grid-template-columns: 1fr 15rem; gap: 0 1.25rem; }
+@media (max-width: 700px) { .lec { grid-template-columns: 1fr; } }
+.lec .tx { font-size: var(--t-second); line-height: 1.65; color: var(--muted); }
+.lec .tx b { color: var(--ink); font-weight: 500; background: var(--gold-soft); }
+.lec .tx .ts { font: 600 11px var(--mono); color: var(--muted); margin-right: 0.35rem; }
+.lec .mg { border-left: 2px solid var(--line); padding-left: 0.75rem; display: flex; flex-direction: column; gap: 0.6rem; font-size: var(--t-caption); }
+.lec .mg .me { font: 400 var(--t-second)/1.45 var(--serif); color: var(--ink); }
+.lec .mg .ta { color: var(--muted); }
+.lec .mg .ta b { color: var(--ink); font-weight: 600; }
+.lec .mg .flag { border-left: 3px solid var(--gold); padding-left: 0.6rem; }
+
+/* B: threaded notebook */
+.thread { display: flex; flex-direction: column; }
+.jot { display: grid; grid-template-columns: 3rem 1fr; gap: 0.5rem; padding: 0.7rem 0; border-top: 1px solid var(--line); }
+.jot .at { font-size: var(--t-caption); color: var(--muted); font-variant-numeric: tabular-nums; }
+.jot .txt { font: 400 var(--t-second)/1.5 var(--serif); }
+.tag { font-size: var(--t-caption); color: var(--ink); background: var(--gold-soft); border-radius: 999px; padding: 0.02rem 0.5rem; margin-left: 0.3rem; }
+.reply { margin-top: 0.5rem; border-left: 2px solid var(--line); padding-left: 0.7rem; display: flex; flex-direction: column; gap: 0.35rem; font-size: var(--t-second); }
+.reply.check { border-left-color: var(--gold); }
+.reply .who { font-size: var(--t-caption); color: var(--muted); } .reply .who b { color: var(--ink); font-weight: 600; } .reply.check .who b { color: var(--gold); }
+.reply .body { line-height: 1.6; }
+.reply .kb { font: 400 var(--t-second)/1.5 var(--serif); color: var(--muted); }
+.cites { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.cite { font-size: var(--t-caption); color: var(--muted); border: 1px solid var(--line); border-radius: 4px; padding: 0.05rem 0.4rem; font-variant-numeric: tabular-nums; }
+.widget { border: 1px solid var(--line); border-radius: 6px; background: var(--bg); padding: 0.6rem 0.7rem; display: flex; flex-direction: column; gap: 0.5rem; }
+.widget .wname { font-size: var(--t-caption); font-weight: 600; }
+.widget label { font-size: var(--t-caption); color: var(--muted); display: flex; align-items: center; gap: 0.6rem; }
+.widget input[type="range"] { flex: 1; accent-color: var(--gold); }
+.widget .val { font-variant-numeric: tabular-nums; color: var(--ink); font-weight: 600; min-width: 2.2rem; text-align: right; }
+.bars { display: flex; flex-direction: column; gap: 0.25rem; }
+.bar { display: grid; grid-template-columns: 5rem 1fr 3rem; align-items: center; gap: 0.5rem; font-size: var(--t-caption); }
+.bar .tok { font-family: var(--mono); } .bar .meter { height: 0.65rem; background: var(--line); border-radius: 2px; overflow: hidden; } .bar .meter i { display: block; height: 100%; background: var(--gold); }
+.bar .pct { text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); } .bar.top .tok { font-weight: 600; }
+
+/* C: concept digest */
+.digest { display: flex; flex-direction: column; gap: 1rem; }
+.concept { display: flex; flex-direction: column; gap: 0.45rem; }
+.concept h3 { font-size: var(--t-item); }
+.concept .row { display: grid; grid-template-columns: 6.5rem 1fr; gap: 0.5rem; font-size: var(--t-second); }
+.concept .row .k { font-size: var(--t-caption); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; color: var(--muted); padding-top: 0.15rem; }
+.concept .row .kb { font-family: var(--serif); }
+.concept .row .muted { color: var(--muted); }
+.keep { border: 1px solid var(--line); border-left: 3px solid var(--gold); border-radius: 6px; padding: 0.7rem 0.9rem; display: flex; flex-direction: column; gap: 0.3rem; }
+
+.asks { display: flex; flex-direction: column; }
+.ask { display: grid; grid-template-columns: 1.6rem 1fr; gap: 0.6rem; padding: 0.75rem 0; border-top: 1px solid var(--line); }
+.ask:last-child { border-bottom: 1px solid var(--line); }
+.ask .n { font-size: var(--t-second); color: var(--muted); font-variant-numeric: tabular-nums; }
+.ask .lead { font-weight: 600; font-size: var(--t-item); line-height: 1.38; }
+.ask .det { font-size: var(--t-second); color: var(--muted); margin-top: 0.15rem; }
+footer { font-size: var(--t-caption); color: var(--muted); border-top: 1px solid var(--line); padding-top: 1rem; }
+@media (prefers-reduced-motion: no-preference) { .bar .meter i { transition: width 90ms linear; } }
+</style>
+
+<main>
+  <header class="stack">
+    <p class="eyebrow">Next milestone · 10 September 2026</p>
+    <h1>Class notes: what a session becomes afterwards</h1>
+    <p class="second" style="max-width:40rem">TA is built. Every session now leaves a file: your notes in order, each with the TA's replies threaded under it, the checks, the deeper passes, the widgets. This page is about what that file turns into — the thing you go back to, and mine for posts. Three forms, the same real content in each, a recommendation, and the two questions you asked alongside: which OSS models, and how notes should be stored.</p>
+    <p class="caption">The content below is from tonight's dry run of the real desk, with the mock model; the replies read as the brain notes because that is what the mock returns. Live replies will be composed, not copied.</p>
+  </header>
+
+  <!-- ============ THE INPUT ============ -->
+  <section class="stack">
+    <div class="sec-head">
+      <p class="eyebrow">The input</p>
+      <h2>One session, one file</h2>
+      <p class="why"><code>npm run export &lt;videoId&gt;</code> pulls the session out of KV into <code>sessions/&lt;videoId&gt;/&lt;date&gt;.json</code>. Notes in time order, replies nested. This is the only thing the class-notes step reads, so whatever form we pick is a rendering of this and can be re-rendered later.</p>
+    </div>
+    <pre>{
+  "source": "7xTGNNLPyMI",
+  "exportedAt": "2026-09-10T04:20:11Z",
+  "notes": [
+    { "id": "n2def", "t": 1620, "tags": ["#til"],
+      "text": "Temperature = how much tolerance we have with the probability. low temperature = higher accuracy",
+      "replies": [
+        { "kind": "check", "at": "…04:11Z", "concept": "c-sampling-temperature",
+          "claim": "low temperature = higher accuracy",
+          "correction": "The next token is drawn from the distribution like a biased coin flip…",
+          "cites": [{ "src": "7xTGNNLPyMI", "t": 1607 }] },
+        { "kind": "deeper", "changed": false, "why": "", "body": "…", "cites": [ … ] },
+        { "kind": "widget", "title": "Sampling", "inputs": [ … ], "outputs": [ … ], "compute": "…" }
+      ] },
+    …
+  ]
+}</pre>
+  </section>
+
+  <!-- ============ FORM A ============ -->
+  <section class="stack">
+    <div class="sec-head">
+      <p class="eyebrow">Form A</p>
+      <h2>The annotated lecture</h2>
+      <p class="why">The transcript is the spine; your notes and the TA's replies sit in the margin at the moment they happened. Closest to "a medium post with annotations".</p>
+    </div>
+    <div class="opt">
+      <div class="bar"><b>Deep Dive into LLMs</b> · 26:40 – 27:10 · annotated</div>
+      <div class="body">
+        <div class="lec">
+          <div class="tx">
+            <p><span class="ts">26:47</span>can do now is we can basically <b>flip a biased coin</b> so um we can sample uh basically a token based on this probability distribution…</p>
+            <p><span class="ts">26:59</span>that are given high probability by the model are <b>more likely to be sampled</b> when you flip this biased coin you can think of it that way so we sample from the…</p>
+            <p><span class="ts">27:20</span>…and so this is the token that we would then append and we continue the process…</p>
+          </div>
+          <div class="mg">
+            <p class="me">Temperature = how much tolerance we have with the probability. low temperature = higher accuracy <span class="tag">#til</span></p>
+            <p class="ta flag"><b>Check this</b> — Low temperature makes it repeatable, not right. At 0 it always takes its top candidate; the ranking never changes.</p>
+            <p class="ta"><b>Widget</b> — Sampling slider (opens below)</p>
+          </div>
+        </div>
+        <div class="verdict">
+          <div><p class="k">Strength</p><p>Keeps the lecture's order and the professor's own words. You can re-listen from any note. Reads like you were there.</p></div>
+          <div><p class="k">Weakness</p><p>Three and a half hours of transcript is the spine even when you wrote four notes. The thing you go back to is your notes, not Karpathy's captions — this buries them.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FORM B ============ -->
+  <section class="stack">
+    <div class="sec-head">
+      <p class="eyebrow">Form B</p>
+      <h2>The threaded notebook</h2>
+      <p class="why">Your notes are the spine, in time order; everything the TA said sits nested under the note it answers. Literally the sidebar, laid flat. The "reddit / HN" shape.</p>
+    </div>
+    <div class="opt">
+      <div class="bar"><b>Session · 5 → 9 Sept</b> · Deep Dive into LLMs · 4 notes<span class="rec">Recommended spine</span></div>
+      <div class="body">
+        <div class="thread">
+          <div class="jot">
+            <span class="at">1:29:14</span>
+            <div>
+              <p class="txt">“a lot of the world knowledge is stored in the parameters of the network” — what? how? <span class="tag">#doubt</span></p>
+              <div class="reply">
+                <p class="who"><b>TA</b> · Knowledge in weights vs knowledge in context</p>
+                <p class="body">Your phone keyboard has no list of your sentences in it. It has a pile of numbers that were nudged, over millions of messages, until its guesses got good. Type “I’ll be there in five” and it offers “minutes” — not because “minutes” is filed anywhere, but because the numbers came out that way. An LLM is the same trick at scale.</p>
+                <div class="cites"><span class="cite">51:28</span><span class="cite">1:39:43</span></div>
+                <div class="reply" style="margin-top:0.4rem">
+                  <p class="who"><b>TA · deeper</b> · unchanged</p>
+                  <p class="body">Training left the weights in a shape that makes true-ish continuations more likely than false ones — Karpathy calls it a lossy compression of the internet. That is why a wrong answer arrives in the same confident voice as a right one: there is no lookup that could miss.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="jot">
+            <span class="at">27:00</span>
+            <div>
+              <p class="txt">Temperature = how much tolerance we have with the probability. low temperature = higher accuracy <span class="tag">#til</span></p>
+              <div class="reply check">
+                <p class="who"><b>Check this</b></p>
+                <p class="kb">“low temperature = higher accuracy”</p>
+                <p class="body">Low temperature makes it repeatable, not right. At 0 it always takes its top candidate — so if the top one is wrong, you get that same wrong answer every single time, and with more confidence. Accuracy comes from the weights and the context; temperature only decides how far down the list it is willing to reach.</p>
+                <div class="cites"><span class="cite">26:47</span></div>
+                <div class="widget" style="margin-top:0.3rem">
+                  <span class="wname">Sampling · built at the break</span>
+                  <label>Temperature <input id="temp" type="range" min="0" max="200" value="70"> <span class="val" id="tv">0.70</span></label>
+                  <div class="bars" id="bars"></div>
+                  <p class="caption" id="wn"></p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="jot">
+            <span class="at">15:13</span>
+            <div><p class="txt">tokens are just unique ids for slices of text</p><p class="caption" style="margin-top:0.25rem">No reply. The check found nothing, and nothing is the record of that.</p></div>
+          </div>
+        </div>
+        <div class="verdict">
+          <div><p class="k">Strength</p><p>Your voice is the document. Compact, chronological, exactly what happened. Widgets sit where they were asked for. Zero generation needed — it is a rendering.</p></div>
+          <div><p class="k">Weakness</p><p>No overview. Ten sessions later you have ten of these and no way in by topic. Nesting is also where a dynamic widget gets awkward if the container is a static post.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FORM C ============ -->
+  <section class="stack">
+    <div class="sec-head">
+      <p class="eyebrow">Form C</p>
+      <h2>The concept digest</h2>
+      <p class="why">Reorganised by concept, using the brain's ids. Each concept: what the lecture said, what you wrote, what was off, what the TA answered. The reference-quality version; also the one that needs a generation pass.</p>
+    </div>
+    <div class="opt">
+      <div class="bar"><b>Milestone 1 · digest</b> · 3 concepts touched this session<span class="rec">Recommended index</span></div>
+      <div class="body digest">
+        <div class="concept">
+          <h3>Sampling and temperature <span class="caption">· c-sampling-temperature</span></h3>
+          <div class="row"><span class="k">Lecture</span><span class="muted">“we can basically flip a biased coin” · 26:47</span></div>
+          <div class="row"><span class="k">You wrote</span><span class="kb">low temperature = higher accuracy</span></div>
+          <div class="row"><span class="k">What’s right</span><span>Low temperature makes it repeatable, not right. The ranking never changes; only how far down the list the lottery reaches.</span></div>
+          <div class="row"><span class="k">Poke</span><span class="muted">Sampling slider — see the thread above</span></div>
+        </div>
+        <div class="concept">
+          <h3>Knowledge in weights vs knowledge in context <span class="caption">· c-knowledge-in-weights</span></h3>
+          <div class="row"><span class="k">Lecture</span><span class="muted">“it’s all just a vague recollection of Internet documents” · 51:28</span></div>
+          <div class="row"><span class="k">You asked</span><span class="kb">“a lot of the world knowledge is stored in the parameters” — what? how?</span></div>
+          <div class="row"><span class="k">Answer</span><span>Nothing is stored and looked up. The weights are a lossy compression that makes true-ish continuations likely; context is what it can actually read.</span></div>
+        </div>
+        <div class="keep">
+          <span class="eyebrow">The thing to remember</span>
+          <p style="font-size:var(--t-second)">Weights are what the model half-remembers; the context window is what is in front of it. Temperature changes neither — it only changes how adventurous the coin is.</p>
+        </div>
+        <div class="verdict">
+          <div><p class="k">Strength</p><p>Blog-ready. The <code>keep</code> block is what a brain post wants. Searchable by concept across every session you ever have.</p></div>
+          <div><p class="k">Weakness</p><p>Loses the order you learned things in, and the digest itself is model-written — one more place where the generator can go generic on you. This is the "article" failure mode wearing a nicer coat.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ RECOMMENDATION ============ -->
+  <section class="stack">
+    <div class="sec-head">
+      <p class="eyebrow">Recommendation</p>
+      <h2>B is the document, C is its index, and it is rendered twice</h2>
+    </div>
+    <ul class="second" style="max-width:42rem">
+      <li><b>The threaded notebook is the record.</b> It is a pure rendering of the session file — no generation, no chance of drift — and it is in your voice. Chronology is the thing you cannot reconstruct later, so it is the spine.</li>
+      <li><b>The concept digest sits on top as an index,</b> one block per concept touched, linking down into the threads. This is the only generated part, and it is short: the “What’s right” line is the check’s correction, the “Answer” line is the reply’s first two sentences. Nothing is summarised across sessions; each concept block points at where it happened.</li>
+      <li><b>Two renderings from one file.</b> A <b>Claude artifact</b> for the living version: widgets run, native comment threads work, you can keep poking. And a <b>brain post</b> for the keep-forever version: the same notebook and index as plain HTML, widgets as a still with a link to the artifact.</li>
+      <li><b>One rule of yours is in the way.</b> Your blog at brain.kaushikbhat.com has a rule you set on 5 Sept: posts are plain HTML, no JavaScript, no comment layer. The class notes have widgets, and widgets are JavaScript. That is why the notes are a Claude artifact first, and the blog would get a copy with stills. Question 2 below is whether you want to keep that rule or change it.</li>
+      <li><b>Not a new build.</b> The renderer is one script reading <code>sessions/*.json</code>. The artifact rendering reuses the sidebar’s CSS and the widget runtime; the brain rendering uses <code>post.css</code> via the existing post template.</li>
+    </ul>
+  </section>
+
+  <!-- ============ MODELS ============ -->
+  <section class="stack">
+    <div class="sec-head">
+      <p class="eyebrow">Models</p>
+      <h2>OSS models for the TA, via OpenRouter</h2>
+      <p class="why">Picked tonight from the live OpenRouter catalogue (430 models) by price, context length, and the reasoning/tools flags, plus what the family is known for. Honest caveat: I have not run them. <code>npm run bench</code> pushes your six real Milestone 1 doubts and four real notes through any list of candidates and prints the replies, so the pick can be made on evidence. Every job is overridable from the Pages environment without touching code.</p>
+    </div>
+    <div class="scroll">
+      <table>
+        <tr><th>Job</th><th>Default</th><th>Fallbacks</th><th>Why</th></tr>
+        <tr><td class="q">Composer</td><td><code>openai/gpt-oss-120b</code><br><span class="caption">$0.04 / $0.17 per M · 131k ctx</span></td><td class="n"><code>qwen/qwen3.7-flash</code><br><code>deepseek/deepseek-v4-flash</code></td><td class="n">Composing from retrieved notes is rephrasing, not reasoning. This needs JSON discipline and a plain voice at near-zero cost. gpt-oss-120b is the cheapest strong instruction-follower on the list with a reasoning mode we can set low.</td></tr>
+        <tr><td class="q">Checker</td><td><code>openai/gpt-oss-120b</code></td><td class="n"><code>qwen/qwen3.7-flash</code></td><td class="n">Same class; judgement over creativity, temperature 0.1. The bench scores it against notes with known verdicts (your two errors must flag; two correct notes must not).</td></tr>
+        <tr><td class="q">Deeper</td><td><code>deepseek/deepseek-v4-pro</code><br><span class="caption">$0.96 / $1.91 per M · 1M ctx</span></td><td class="n"><code>qwen/qwen3.7-plus</code><br><code>minimax/minimax-m3</code></td><td class="n">The deeper pass gets the transcript up to the note — up to ~60k characters — plus the prerequisite subgraph, and is asked to re-derive. Needs a real reasoning model with a long window. DeepSeek also caches repeated prefixes automatically, which matters when the break re-reads every note against the same transcript.</td></tr>
+        <tr><td class="q">Widget</td><td><code>qwen/qwen3-coder-next</code><br><span class="caption">$0.12 / $0.80 per M</span></td><td class="n"><code>moonshotai/kimi-k2.7-code</code><br><code>openai/gpt-oss-120b</code></td><td class="n">A small code-shaped task: a JSON spec plus one pure function body. A coder model gets the arithmetic right more often; the validator and the sandbox catch the rest.</td></tr>
+      </table>
+    </div>
+    <p class="second" style="max-width:42rem">Cost at your pace: a session of ten notes is roughly ten composer calls, ten checker calls and a break of ten deeper calls at ~20k tokens each — about $0.25, nearly all of it the deeper pass. Swapping deeper to <code>qwen3.7-plus</code> roughly halves that.</p>
+  </section>
+
+  <!-- ============ STORAGE ============ -->
+  <section class="stack">
+    <div class="sec-head">
+      <p class="eyebrow">Storage</p>
+      <h2>Where notes live, and the better idea</h2>
+      <p class="why">What is built tonight, and the alternatives I weighed.</p>
+    </div>
+    <div class="scroll">
+      <table>
+        <tr><th>Layer</th><th>What</th><th>Why</th></tr>
+        <tr><td class="q">Local first</td><td><code>browser.storage.local</code> · <code>s:&lt;videoId&gt;</code></td><td class="n">A jot lands instantly and works offline. The panel renders identically with the desk down. Optimistic first, per the invariants.</td></tr>
+        <tr><td class="q">Live copy</td><td>KV · <code>note:&lt;src&gt;:&lt;id&gt;</code> written by the extension · <code>reply:&lt;src&gt;:&lt;id&gt;:&lt;seq&gt;</code> written by the desk</td><td class="n">One writer per key, so two devices never fight. A check that finds nothing is not stored — absence is the record. Same architecture as every other app here.</td></tr>
+        <tr><td class="q">Durable copy</td><td><code>sessions/&lt;videoId&gt;/&lt;date&gt;.json</code> in the repo, via <code>npm run export</code></td><td class="n">The better idea. KV is a cache; the file is the archive — diffable, greppable, and the single input to the class-notes renderer. A session is done when its file is committed.</td></tr>
+      </table>
+    </div>
+    <p class="second" style="max-width:42rem"><b>Considered and not done.</b> <b>D1</b> (SQLite): queryable across sessions, but it breaks the standing KV-only constraint for a benefit the exported files already give you with <code>grep</code>. <b>The tracker artifact’s db:</b> it is right there, but the brief’s hard boundary says no, and the invariants say couplings are one-way and narrow — the clipboard digest is that coupling. <b>Git-only, no KV:</b> tempting, but then the panel cannot see replies from another device until you export and pull; KV is what makes the sidebar work on the phone next to the laptop.</p>
+  </section>
+
+  <!-- ============ ASKS ============ -->
+  <section class="stack">
+    <div class="sec-head">
+      <h2>What I need from you on this milestone</h2>
+      <p class="why">Comment here. Nothing on this page is built yet; TA itself is.</p>
+    </div>
+    <div class="asks">
+      <div class="ask"><span class="n">1</span><div><p class="lead">B as spine, C as index — yes?</p><p class="det">Or one of the pure forms. A alone is the one I would argue against.</p></div></div>
+      <div class="ask"><span class="n">2</span><div><p class="lead">Where do the class notes live — as a Claude artifact, or as a post on brain.kaushikbhat.com?</p><p class="det">The widgets are JavaScript. Your blog’s rule since 5 Sept is that posts are plain HTML with no scripts. So: <b>A</b> — the notes live as a Claude artifact (widgets work, comments work), and if you want a copy on the blog it gets a still image where each widget was, plus a link. The blog’s rule stays. <b>B</b> — you change the blog’s rule to allow scripts in posts, and the notes go to the blog with widgets live. I recommend A. If you choose B, the rule gets changed first, in <code>brain/AGENTS.md</code> and <code>brain/skills/brain-post.md</code>, on purpose.</p></div></div>
+      <div class="ask"><span class="n">3</span><div><p class="lead">One document per session, or one per milestone?</p><p class="det">Per session is honest and small. Per milestone merges several sessions’ threads into one notebook with one index — better to go back to, slightly more machinery.</p></div></div>
+      <div class="ask"><span class="n">4</span><div><p class="lead">Run the bench before going live?</p><p class="det">Put an OpenRouter key in the dev environment and I run <code>npm run bench composer</code> and <code>bench checker</code> against three candidates each and hand you the replies to read. Ten minutes, a few cents, and the model choice stops being a guess.</p></div></div>
+    </div>
+  </section>
+
+  <footer>Companion to the TA mockup. TA is built at <code>~/Code/ta</code>, committed locally, not pushed, not deployed.</footer>
+</main>
+
+<script>
+(function () {
+  var C = [['minutes', 3.2], ['mins', 2.4], ['minute', 1.9], ['seconds', 1.1], ['hours', 0.6], ['days', 0.1]];
+  var bars = document.getElementById('bars'), t = document.getElementById('temp'), tv = document.getElementById('tv'), wn = document.getElementById('wn');
+  C.forEach(function (c, i) { var r = document.createElement('div'); r.className = 'bar' + (i === 0 ? ' top' : ''); r.innerHTML = '<span class="tok"></span><span class="meter"><i></i></span><span class="pct"></span>'; r.querySelector('.tok').textContent = c[0]; bars.appendChild(r); c.push(r); });
+  function draw() { var T = Math.max(0.01, t.value / 100); tv.textContent = (t.value / 100).toFixed(2); var m = Math.max.apply(null, C.map(function (c) { return c[1]; })); var e = C.map(function (c) { return Math.exp((c[1] - m) / T); }); var s = e.reduce(function (a, b) { return a + b; }, 0); C.forEach(function (c, i) { var p = e[i] / s; c[2].querySelector('i').style.width = (p * 100).toFixed(1) + '%'; c[2].querySelector('.pct').textContent = (p * 100).toFixed(1) + '%'; }); wn.textContent = T < 0.15 ? 'Near 0: the same word forever, right or wrong.' : T < 1.05 ? 'The order is unchanged; only how far down it reaches.' : 'Above 1 it sometimes offers hours. Same ranking underneath.'; }
+  t.addEventListener('input', draw); draw();
+})();
+</script>

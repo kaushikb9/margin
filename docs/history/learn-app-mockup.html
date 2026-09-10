@@ -1,0 +1,687 @@
+<title>TA Study Sidebar</title>
+<style>
+/* kb design tokens — copied verbatim from ~/Code/brain/design-system/tokens.css */
+:root {
+  --bg:        #faf8f4;
+  --ink:       #1c1b18;
+  --muted:     #78736a;
+  --line:      #e6e1d7;
+  --card:      #ffffff;
+  --gold:      #a8720a;
+  --gold-soft: #f4ead2;
+  --sans:  -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --mono:  ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --ui:    var(--sans);
+  --t-body:    17px;
+  --t-item:    15.5px;
+  --t-second:  15px;
+  --t-caption: 13px;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not([data-theme="paper"]) {
+    --bg: #131210; --ink: #e8e4dc; --muted: #8f887c; --line: #2a2721;
+    --card: #1b1916; --gold: #e0b04f; --gold-soft: #2e2718;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="paper"], :root[data-theme="light"] { color-scheme: light; }
+:root[data-theme="ink"], :root[data-theme="dark"] {
+  --bg: #131210; --ink: #e8e4dc; --muted: #8f887c; --line: #2a2721;
+  --card: #1b1916; --gold: #e0b04f; --gold-soft: #2e2718;
+  color-scheme: dark;
+}
+
+/* ---- page ---- */
+* { box-sizing: border-box; }
+html { background: var(--bg); }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font: 400 var(--t-body)/1.6 var(--sans);
+  -webkit-font-smoothing: antialiased;
+}
+main { max-width: 54rem; margin: 0 auto; padding: 2.5rem 1.25rem 5rem; display: flex; flex-direction: column; gap: 3.25rem; }
+p { margin: 0; }
+h1, h2, h3 { margin: 0; text-wrap: balance; font-weight: 600; }
+h1 { font-size: 20px; }
+h2 { font-size: var(--t-body); }
+h3 { font-size: var(--t-item); }
+ul { margin: 0; padding-left: 1.15rem; }
+li { margin: 0.2rem 0; }
+a { color: inherit; text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
+a:hover { text-decoration-color: var(--ink); }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+button:focus-visible, textarea:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+code { font: 0.88em var(--mono); background: var(--gold-soft); padding: 0.05em 0.3em; border-radius: 3px; }
+
+.eyebrow { font-size: var(--t-caption); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; color: var(--muted); }
+.muted { color: var(--muted); }
+.caption { font-size: var(--t-caption); color: var(--muted); }
+.second { font-size: var(--t-second); color: var(--muted); }
+
+.masthead { display: flex; flex-direction: column; gap: 0.5rem; }
+.masthead p { max-width: 38rem; }
+
+.stack { display: flex; flex-direction: column; gap: 0.75rem; }
+.sec-head { display: flex; flex-direction: column; gap: 0.3rem; max-width: 38rem; }
+.sec-head h2 { font-size: var(--t-body); }
+.sec-head .why { font-size: var(--t-second); color: var(--muted); }
+
+/* ---- locked decisions table ---- */
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: var(--t-second); }
+th, td { text-align: left; vertical-align: top; padding: 0.55rem 0.9rem 0.55rem 0; border-top: 1px solid var(--line); }
+th { font-size: var(--t-caption); color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; border-top: 0; }
+td.q { font-weight: 600; white-space: nowrap; }
+td.a { color: var(--ink); }
+td.n { color: var(--muted); }
+
+/* ---- browser stage ---- */
+.stage { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--card); }
+.chrome { display: flex; align-items: center; gap: 0.6rem; padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--line); background: var(--bg); }
+.dots { display: flex; gap: 0.3rem; }
+.dots i { width: 0.6rem; height: 0.6rem; border-radius: 50%; background: var(--line); display: block; }
+.urlpill { flex: 1; font-size: var(--t-caption); color: var(--muted); background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 0.15rem 0.7rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chrome .zen { font-size: var(--t-caption); color: var(--muted); white-space: nowrap; }
+
+.split { display: grid; grid-template-columns: 1fr 340px; align-items: stretch; }
+@media (max-width: 800px) { .split { grid-template-columns: 1fr; } }
+
+/* the video half */
+.viewer { padding: 0.9rem; display: flex; flex-direction: column; gap: 0.6rem; border-right: 1px solid var(--line); min-width: 0; }
+@media (max-width: 800px) { .viewer { border-right: 0; border-bottom: 1px solid var(--line); } }
+.screen { aspect-ratio: 16 / 9; border-radius: 5px; background: #14130f; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+.screen .board { color: #d9d2c4; font: 500 var(--t-second)/1.5 var(--mono); text-align: center; padding: 1rem; opacity: 0.85; }
+.screen .board b { color: #e0b04f; font-weight: 600; }
+.scrub { display: flex; flex-direction: column; gap: 0.3rem; }
+.track { height: 4px; border-radius: 2px; background: var(--line); position: relative; }
+.track .played { position: absolute; inset: 0 auto 0 0; width: 42.5%; background: var(--gold); border-radius: 2px; }
+.track .mark { position: absolute; top: -3px; width: 1px; height: 10px; background: var(--muted); opacity: 0.5; }
+.track .head { position: absolute; top: -3px; left: 42.5%; width: 2px; height: 10px; background: var(--gold); }
+.times { display: flex; justify-content: space-between; font-size: var(--t-caption); color: var(--muted); font-variant-numeric: tabular-nums; }
+.vtitle { font-size: var(--t-item); font-weight: 600; line-height: 1.38; }
+
+/* the sidebar half */
+.side { display: flex; flex-direction: column; min-width: 0; background: var(--card); }
+.side-head { display: flex; align-items: baseline; gap: 0.5rem; padding: 0.7rem 0.85rem 0.5rem; border-bottom: 1px solid var(--line); }
+.side-head .wordmark { font-weight: 600; font-size: var(--t-item); letter-spacing: 0.01em; }
+.side-head .chip { margin-left: auto; }
+.chip { font-size: var(--t-caption); color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 0.05rem 0.55rem; white-space: nowrap; }
+.side-body { padding: 0.85rem; display: flex; flex-direction: column; gap: 0.85rem; }
+.side-foot { margin-top: auto; border-top: 1px solid var(--line); padding: 0.6rem 0.85rem; display: flex; align-items: center; gap: 0.75rem; font-size: var(--t-caption); color: var(--muted); }
+.side-foot .primary { margin-left: auto; font-size: var(--t-second); font-weight: 600; color: var(--gold); }
+.side-foot .ghost { font-size: var(--t-second); text-decoration: underline; text-decoration-color: var(--line); }
+
+.srcline { font-size: var(--t-caption); color: var(--muted); display: flex; gap: 0.4rem; align-items: baseline; }
+.srcline b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+/* jot composer */
+.composer { display: flex; flex-direction: column; gap: 0.5rem; }
+.composer textarea {
+  width: 100%; min-height: 4.5rem; resize: vertical;
+  font: 400 var(--t-second)/1.55 var(--serif); color: var(--ink);
+  background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 0.5rem 0.6rem;
+}
+.composer .acts { display: flex; gap: 0.5rem; }
+.composer .acts button { font-size: var(--t-second); border: 1px solid var(--line); border-radius: 999px; padding: 0.15rem 0.7rem; color: var(--muted); }
+.composer .acts button.on { color: var(--ink); border-color: var(--ink); font-weight: 600; }
+.composer .hint { font-size: var(--t-caption); color: var(--muted); }
+
+/* the queue */
+.queue { display: flex; flex-direction: column; }
+.jot { display: grid; grid-template-columns: 1.5rem 1fr; gap: 0.5rem; padding: 0.6rem 0; border-top: 1px solid var(--line); }
+.jot .at { font-size: var(--t-caption); color: var(--muted); font-variant-numeric: tabular-nums; }
+.jot .txt { font: 400 var(--t-second)/1.5 var(--serif); }
+.jot .tags { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.3rem; align-items: baseline; }
+.tag { font-size: var(--t-caption); color: var(--ink); background: var(--gold-soft); border-radius: 999px; padding: 0.02rem 0.5rem; }
+.addtag { font-size: var(--t-caption); color: var(--muted); text-decoration: underline; text-decoration-color: var(--line); }
+
+/* inline TA response under a note */
+.reply { margin-top: 0.5rem; border-left: 2px solid var(--line); padding-left: 0.7rem; display: flex; flex-direction: column; gap: 0.4rem; }
+.reply .who { font-size: var(--t-caption); color: var(--muted); display: flex; gap: 0.5rem; align-items: baseline; }
+.reply .who b { color: var(--ink); font-weight: 600; }
+.reply.flag { border-left-color: var(--gold); }
+.collapsed { margin-top: 0.35rem; font-size: var(--t-caption); color: var(--muted); display: flex; gap: 0.5rem; align-items: baseline; }
+.collapsed b { color: var(--ink); font-weight: 600; }
+.collapsed.check b { color: var(--gold); }
+.pending { margin-top: 0.35rem; font-size: var(--t-caption); color: var(--muted); }
+.sweep { display: flex; flex-direction: column; }
+.sweep .row { display: grid; grid-template-columns: 2.4rem 1fr auto; gap: 0.5rem; padding: 0.5rem 0; border-top: 1px solid var(--line); font-size: var(--t-second); align-items: baseline; }
+.sweep .row .at { font-size: var(--t-caption); color: var(--muted); font-variant-numeric: tabular-nums; }
+.sweep .row .t { font-family: var(--serif); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sweep .row .st { font-size: var(--t-caption); color: var(--muted); white-space: nowrap; }
+.sweep .row .st.gold { color: var(--gold); font-weight: 600; }
+
+/* break session */
+.break { display: flex; flex-direction: column; gap: 1rem; }
+.ans { display: flex; flex-direction: column; gap: 0.5rem; }
+.ans .asked { font: 400 var(--t-second)/1.5 var(--serif); color: var(--muted); border-left: 2px solid var(--line); padding-left: 0.7rem; }
+.ans .concept { font-size: var(--t-caption); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; color: var(--muted); }
+.ans .body { font-size: var(--t-second); line-height: 1.6; }
+.ans .body em { font-style: normal; background: var(--gold-soft); padding: 0 0.15em; }
+.cites { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.cite { font-size: var(--t-caption); color: var(--muted); border: 1px solid var(--line); border-radius: 4px; padding: 0.05rem 0.4rem; font-variant-numeric: tabular-nums; }
+.ans .more { display: flex; gap: 0.9rem; font-size: var(--t-caption); }
+.ans .more button { text-decoration: underline; text-decoration-color: var(--line); color: var(--muted); }
+
+.flag { border-left: 3px solid var(--gold); padding: 0.1rem 0 0.1rem 0.85rem; display: flex; flex-direction: column; gap: 0.4rem; }
+.flag .yours { font: 400 var(--t-second)/1.5 var(--serif); }
+.flag .label { font-size: var(--t-caption); color: var(--gold); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+.flag .fix { font-size: var(--t-second); line-height: 1.6; }
+.flag .acts { display: flex; gap: 0.9rem; font-size: var(--t-caption); }
+.flag .acts button { text-decoration: underline; text-decoration-color: var(--line); color: var(--muted); }
+
+/* ---- widgets ---- */
+.widget { border: 1px solid var(--line); border-radius: 6px; background: var(--bg); padding: 0.7rem 0.75rem; display: flex; flex-direction: column; gap: 0.6rem; }
+.widget .whead { display: flex; align-items: baseline; gap: 0.5rem; }
+.widget .wname { font-size: var(--t-caption); font-weight: 600; }
+.widget .wgen { margin-left: auto; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.widget label { font-size: var(--t-caption); color: var(--muted); display: flex; align-items: center; gap: 0.6rem; }
+.widget input[type="range"] { flex: 1; accent-color: var(--gold); }
+.widget .val { font-variant-numeric: tabular-nums; color: var(--ink); font-weight: 600; min-width: 2.2rem; text-align: right; }
+.bars { display: flex; flex-direction: column; gap: 0.25rem; }
+.bar { display: grid; grid-template-columns: 5.5rem 1fr 3rem; align-items: center; gap: 0.5rem; font-size: var(--t-caption); }
+.bar .tok { font-family: var(--mono); color: var(--ink); overflow: hidden; text-overflow: ellipsis; }
+.bar .meter { height: 0.7rem; background: var(--line); border-radius: 2px; overflow: hidden; }
+.bar .meter i { display: block; height: 100%; background: var(--gold); }
+.bar .pct { text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
+.bar.top .tok { font-weight: 600; }
+.wnote { font-size: var(--t-caption); color: var(--muted); line-height: 1.5; }
+.wnote b { color: var(--ink); font-weight: 600; }
+
+.tokline { display: flex; flex-wrap: wrap; gap: 3px; }
+.tk { font: 0.8rem var(--mono); border-radius: 3px; padding: 0.1rem 0.25rem; background: var(--gold-soft); color: var(--ink); white-space: pre; }
+.tk:nth-child(even) { background: var(--card); border: 1px solid var(--line); padding: calc(0.1rem - 1px) calc(0.25rem - 1px); }
+.tkids { font: 0.72rem var(--mono); color: var(--muted); word-break: break-all; }
+.widget input[type="text"] { width: 100%; font: 0.85rem var(--mono); color: var(--ink); background: var(--card); border: 1px solid var(--line); border-radius: 5px; padding: 0.35rem 0.5rem; }
+
+/* ---- brain record ---- */
+.record { display: grid; grid-template-columns: 8rem 1fr; gap: 0.5rem 1rem; font-size: var(--t-second); }
+@media (max-width: 640px) { .record { grid-template-columns: 1fr; gap: 0.15rem 0; } .record dt { margin-top: 0.6rem; } }
+.record dt { font-size: var(--t-caption); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; color: var(--muted); padding-top: 0.15rem; }
+.record dd { margin: 0; line-height: 1.6; }
+.record dd.mono { font-family: var(--mono); font-size: 0.82rem; color: var(--muted); }
+pre { margin: 0; overflow-x: auto; font: 0.78rem/1.55 var(--mono); background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 0.75rem 0.85rem; color: var(--ink); }
+pre .k { color: var(--muted); }
+pre .s { color: var(--gold); }
+
+/* ---- asks ---- */
+.asks { display: flex; flex-direction: column; }
+.ask { display: grid; grid-template-columns: 1.6rem 1fr; gap: 0.6rem; padding: 0.75rem 0; border-top: 1px solid var(--line); }
+.ask:last-child { border-bottom: 1px solid var(--line); }
+.ask .n { font-size: var(--t-second); color: var(--muted); font-variant-numeric: tabular-nums; }
+.ask .lead { font-weight: 600; font-size: var(--t-item); line-height: 1.38; }
+.ask .det { font-size: var(--t-second); color: var(--muted); margin-top: 0.15rem; }
+
+footer { font-size: var(--t-caption); color: var(--muted); border-top: 1px solid var(--line); padding-top: 1rem; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .bar .meter i { transition: width 90ms linear; }
+}
+</style>
+
+<main>
+
+  <header class="masthead">
+    <p class="eyebrow">Mockup · 9 September 2026</p>
+    <h1>TA — a study companion for the milestone you are in</h1>
+    <p class="second">A Firefox sidebar that sits beside the lecture. You jot as you go. The TA answers <code>#doubt</code> notes and checks the rest from a precomputed concept brain while the lecture runs, and each response lands collapsed under your note. A break is optional: a deeper pass over everything. Three states and the break below, plus one real brain record and two working widgets.</p>
+    <p class="caption">Timestamps in the mock are placeholders until the transcript is ingested. Everything you are quoted saying is verbatim from <code>progress/d1</code>.</p>
+  </header>
+
+  <section class="stack">
+    <div class="sec-head">
+      <h2>What is locked</h2>
+      <p class="why">From the interview. Everything below is built to these.</p>
+    </div>
+    <div class="scroll">
+      <table>
+        <tr><th>Decision</th><th>Choice</th><th>Consequence</th></tr>
+        <tr><td class="q">Surface</td><td class="a">Firefox sidebar in Zen</td><td class="n">Runs unsigned via <code>about:debugging</code> while building; AMO unlisted signing for permanent install. No browser switch.</td></tr>
+        <tr><td class="q">Model access</td><td class="a">OpenRouter, OSS models</td><td class="n">Key lives in one Pages Function, never in the extension. Composition on a small model, escalation on a reasoning model.</td></tr>
+        <tr><td class="q">Breadth</td><td class="a">Milestone 1 + 2</td><td class="n">Tokens through the transformer block. Spans both Karpathy videos as one story.</td></tr>
+        <tr><td class="q">Brain build</td><td class="a">Built here, no review pass</td><td class="n">Every note carries a timestamp anchor and a quote, so verification happens while you read rather than up front.</td></tr>
+        <tr><td class="q">Widgets</td><td class="a">Generated per thread, at the break</td><td class="n">Built from your note + the answer + what did not land, not from the concept in advance. Fixed primitive set, sandboxed, no network. Changed 10 Sep from per-concept.</td></tr>
+        <tr><td class="q">Voice</td><td class="a">Everyday examples</td><td class="n">One example carried across the whole milestone: phone keyboard autocomplete.</td></tr>
+        <tr><td class="q">Interaction</td><td class="a">Async TA, optional break</td><td class="n">Answers and checks land collapsed under the note while the lecture runs. The break is a chosen pause for a deeper pass. Changed 10 Sep from answer-at-the-break.</td></tr>
+        <tr><td class="q">Capture</td><td class="a">Everything is a note</td><td class="n">Enter sends. Tags applied afterwards; <code>#doubt</code> is one of them. Changed 10 Sep from a doubt/note choice up front.</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ STATE A ============ -->
+  <section class="stack">
+    <div class="sec-head">
+      <p class="eyebrow">State 1</p>
+      <h2>During the lecture</h2>
+      <p class="why">The panel takes jots and does nothing else. No answer arrives, no badge pulses, no proactive flag. The only feedback is a count.</p>
+    </div>
+
+    <div class="stage">
+      <div class="chrome">
+        <span class="dots"><i></i><i></i><i></i></span>
+        <span class="urlpill">youtube.com/watch?v=7xTGNNLPyMI&amp;t=5354s</span>
+        <span class="zen">Zen · sidebar</span>
+      </div>
+      <div class="split">
+        <div class="viewer">
+          <div class="screen"><p class="board">a lot of the world knowledge<br>is stored in the <b>parameters</b><br>of the network</p></div>
+          <div class="scrub">
+            <div class="track">
+              <span class="played"></span>
+              <span class="mark" style="left:5.6%"></span>
+              <span class="mark" style="left:14.8%"></span>
+              <span class="mark" style="left:27.1%"></span>
+              <span class="mark" style="left:42.9%"></span>
+              <span class="mark" style="left:61.2%"></span>
+              <span class="head"></span>
+            </div>
+            <div class="times"><span>1:29:14</span><span>3:31:23</span></div>
+          </div>
+          <p class="vtitle">Deep Dive into LLMs like ChatGPT</p>
+          <p class="caption">Chapter: Base models and their psychology · next chapter in 4 min</p>
+        </div>
+
+        <div class="side">
+          <div class="side-head">
+            <span class="wordmark">TA</span>
+            <span class="chip">Milestone 1</span>
+          </div>
+          <div class="side-body">
+            <p class="srcline">Deep Dive into LLMs · <b>1:29:14</b></p>
+
+            <div class="composer">
+              <textarea readonly rows="2">its just the parameters? where are the tokens?</textarea>
+              <p class="hint">Enter sends. Shift-Enter for a new line.</p>
+            </div>
+
+            <div class="queue">
+              <div class="jot">
+                <span class="at">1:12</span>
+                <div>
+                  <p class="txt">“a lot of the world knowledge is stored in the parameters of the network” — what? how?</p>
+                  <p class="tags"><span class="tag">#doubt</span><button type="button" class="addtag">+ tag</button></p>
+                  <p class="collapsed"><b>Answered</b> · Knowledge in weights · 1:13</p>
+                </div>
+              </div>
+              <div class="jot">
+                <span class="at">1:19</span>
+                <div>
+                  <p class="txt">Temperature = how much tolerance we have with the probability. low temperature = higher accuracy</p>
+                  <p class="tags"><span class="tag">#til</span><button type="button" class="addtag">+ tag</button></p>
+                  <p class="collapsed check"><b>Check this</b> · 1:20</p>
+                </div>
+              </div>
+              <div class="jot">
+                <span class="at">1:26</span>
+                <div>
+                  <p class="txt">if we fine-tune it to say “I don’t know”, how does it know the next question is one it doesn’t know?</p>
+                  <p class="tags"><span class="tag">#doubt</span><button type="button" class="addtag">+ tag</button></p>
+                  <p class="pending">Answering…</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="side-foot">
+            <span>3 notes · 1 answered · 1 to check</span>
+            <button type="button" class="primary">Break</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <ul class="second">
+      <li>One box, Enter sends. Everything is a note. Tags go on afterwards — <code>#doubt</code> is one of them, and you invent the rest on the fly (<code>#key</code>, <code>#til</code>). Nothing is chosen up front.</li>
+      <li>Any note can be wrong, tagged or not, so the break reads all of them. <code>#doubt</code> only decides which ones get an answer rather than a check.</li>
+      <li>Jots are set in serif, the same register the tracker uses for your own writing. Everything the app says is sans.</li>
+      <li>The TA works while the lecture runs. A <code>#doubt</code> gets answered within a minute and the answer lands <b>collapsed under the note</b> — one muted line, no popup, no badge. You open it when you want to.</li>
+      <li>A note that contradicts the brain gets a <b>Check this</b> line the same way. It does not need to be a doubt to be caught.</li>
+      <li>The footer count is the only summary. No urgency, no unread dot.</li>
+    </ul>
+  </section>
+
+  <!-- ============ STATE B ============ -->
+  <section class="stack">
+    <div class="sec-head">
+      <p class="eyebrow">State 2</p>
+      <h2>Reading a response, lecture still running</h2>
+      <p class="why">You opened the two collapsed lines. Same queue, same place — the answer is a thread under your note, the way comments work on this page. Karpathy has not stopped.</p>
+    </div>
+
+    <div class="stage">
+      <div class="chrome">
+        <span class="dots"><i></i><i></i><i></i></span>
+        <span class="urlpill">youtube.com/watch?v=7xTGNNLPyMI&amp;t=5620s</span>
+        <span class="zen">Zen · sidebar</span>
+      </div>
+      <div class="split">
+        <div class="viewer">
+          <div class="screen"><p class="board">in-context learning<br>is a <b>working memory</b><br>not a vague recollection</p></div>
+          <div class="scrub">
+            <div class="track"><span class="played" style="width:44.3%"></span><span class="head" style="left:44.3%"></span></div>
+            <div class="times"><span>1:33:40</span><span>3:31:23</span></div>
+          </div>
+          <p class="vtitle">Deep Dive into LLMs like ChatGPT</p>
+          <p class="caption">Playing.</p>
+        </div>
+
+        <div class="side">
+          <div class="side-head">
+            <span class="wordmark">TA</span>
+            <span class="chip">Milestone 1</span>
+          </div>
+          <div class="side-body">
+            <p class="srcline">Deep Dive into LLMs · <b>1:33:40</b></p>
+
+            <div class="queue">
+              <div class="jot">
+                <span class="at">1:12</span>
+                <div>
+                  <p class="txt">“a lot of the world knowledge is stored in the parameters of the network” — what? how?</p>
+                  <p class="tags"><span class="tag">#doubt</span></p>
+                  <div class="reply">
+                    <p class="who"><b>TA</b> · Knowledge in weights · 1:13</p>
+                    <p class="body" style="font-size:var(--t-second);line-height:1.6">Your phone keyboard has no list of your sentences in it. It has a pile of numbers that were nudged, over millions of messages, until its guesses got good. Type “I’ll be there in five” and it offers “minutes” — not because “minutes” is filed anywhere, but because the numbers came out that way. An LLM is the same trick at scale. <em style="font-style:normal;background:var(--gold-soft)">Nothing is stored and looked up.</em> Training left the weights in a shape that makes true-ish continuations more likely than false ones. That is why a wrong answer arrives in the same confident voice as a right one: there is no lookup that could miss.</p>
+                    <div class="cites"><span class="cite">1:12:40</span><span class="cite">plan · misconception 1</span></div>
+                    <div class="more" style="display:flex;gap:0.9rem;font-size:var(--t-caption)">
+                      <button type="button" style="text-decoration:underline;text-decoration-color:var(--line);color:var(--muted)">Poke at it</button>
+                      <button type="button" style="text-decoration:underline;text-decoration-color:var(--line);color:var(--muted)">Not convinced, go deeper</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="jot">
+                <span class="at">1:19</span>
+                <div>
+                  <p class="txt">Temperature = how much tolerance we have with the probability. low temperature = higher accuracy</p>
+                  <p class="tags"><span class="tag">#til</span></p>
+                  <div class="reply flag">
+                    <p class="who"><b style="color:var(--gold)">Check this</b> · 1:20</p>
+                    <p class="fix">Low temperature makes it <b>repeatable</b>, not right. At 0 it always takes its top candidate — so if the top one is wrong, you get that same wrong answer every single time, and with more confidence. Accuracy comes from the weights and the context; temperature only decides how far down the list it is willing to reach.</p>
+                    <div class="acts" style="display:flex;gap:0.9rem;font-size:var(--t-caption)">
+                      <span style="color:var(--muted)">Show me · <b style="color:var(--ink);font-weight:600">ready at the break</b></span>
+                      <button type="button" style="text-decoration:underline;text-decoration-color:var(--line);color:var(--muted)">I think it is fine</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="jot">
+                <span class="at">1:26</span>
+                <div>
+                  <p class="txt">if we fine-tune it to say “I don’t know”, how does it know the next question is one it doesn’t know?</p>
+                  <p class="tags"><span class="tag">#doubt</span></p>
+                  <p class="collapsed"><b>Answered</b> · Refusal is a learned signal · 1:28</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="side-foot">
+            <span>3 notes · 2 answered · 1 to check</span>
+            <button type="button" class="primary">Break</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <ul class="second">
+      <li>The flag quotes you and corrects the claim. It does not say “incorrect”, it does not count errors, and <b>I think it is fine</b> is a real button — you can overrule it and it stays overruled.</li>
+      <li>Every answer carries an anchor. <code>1:12:40</code> is where the lecture says it; <code>plan · misconception 1</code> is the entry already sitting in <code>plan.json</code>.</li>
+      <li>One concept per answer, hard-capped. The moment an answer covers two, it has become an article.</li>
+      <li>Latency target is under a minute. It arrives when it arrives; the row grows and nothing else moves.</li>
+      <li><b>Poke at it</b> and <b>Show me</b> queue a request rather than opening anything. The widget is built at the break from the thread, and lands under it.</li>
+    </ul>
+  </section>
+
+  <!-- ============ THE BREAK ============ -->
+  <section class="stack">
+    <div class="sec-head">
+      <p class="eyebrow">Optional</p>
+      <h2>The break</h2>
+      <p class="why">Nothing waits for it. It is a pause you choose: read what landed, and let the TA make a deeper pass over every note — including the ones it already answered — with the reasoning model and the full transcript.</p>
+    </div>
+
+    <div class="stage" style="max-width:26rem">
+      <div class="side" style="border-radius:8px">
+        <div class="side-head"><span class="wordmark">TA</span><span class="chip">Break · 1:41</span></div>
+        <div class="side-body">
+          <p class="second" style="color:var(--ink)">Since 1:12: three notes, all answered, one still to check.</p>
+          <div class="sweep">
+            <div class="row"><span class="at">1:12</span><span class="t">“a lot of the world knowledge is stored…</span><span class="st">read</span></div>
+            <div class="row"><span class="at">1:19</span><span class="t">Temperature = how much tolerance…</span><span class="st gold">check this</span></div>
+            <div class="row"><span class="at">1:26</span><span class="t">if we fine-tune it to say “I don’t know”…</span><span class="st">unread</span></div>
+          </div>
+          <p class="second">The deeper pass re-reads all three against the transcript so far. If it changes its mind on an answer, the thread gets a second reply, never a silent edit. <b style="color:var(--ink)">One poke queued</b> — it gets built now, from that thread, and lands under it.</p>
+        </div>
+        <div class="side-foot">
+          <button type="button" class="ghost">Back to the lecture</button>
+          <button type="button" class="primary">Go deeper on all notes</button>
+        </div>
+      </div>
+    </div>
+
+    <ul class="second">
+      <li><b>End session</b> moves here, off the main footer. It is the only thing that writes to the tracker: one note to <code>progress/d1</code>.</li>
+      <li>There is no chapter-end trigger any more. The panel never speaks first.</li>
+    </ul>
+  </section>
+
+  <!-- ============ STATE C ============ -->
+  <section class="stack">
+    <div class="sec-head">
+      <p class="eyebrow">State 3</p>
+      <h2>Poke at it</h2>
+      <p class="why">Pressing <b>Poke at it</b> or <b>Show me</b> on a thread does not open a prebuilt widget — nobody knows in advance what will be unclear. It queues a request. At the next break (or end of session) the TA builds one from the thread itself: your note, its answer, and the exact thing that did not land. This is the one built for the temperature thread. Drag it: the top candidate never changes.</p>
+    </div>
+
+    <div class="stage" style="max-width:26rem">
+      <div class="side" style="border-radius:8px">
+        <div class="side-head"><span class="wordmark">TA</span><span class="chip">Temperature</span></div>
+        <div class="side-body">
+          <p class="second" style="color:var(--ink)">Your keyboard, guessing what comes after <b>“I’ll be there in five”</b>.</p>
+          <div class="widget">
+            <div class="whead"><span class="wname">Sampling</span><span class="wgen">built at break · 1:41</span></div>
+            <label for="temp">Temperature <input id="temp" type="range" min="0" max="200" value="70"> <span class="val" id="tempval">0.70</span></label>
+            <div class="bars" id="bars"></div>
+            <p class="wnote" id="wnote"></p>
+          </div>
+          <p class="second">Turn it to 0 and the keyboard offers the same word forever. Turn it up and it starts reaching for <code>hours</code>. Neither move made it more correct — <b>the ordering never changed.</b></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ STATE D ============ -->
+  <section class="stack">
+    <div class="sec-head">
+      <p class="eyebrow">Where the answers come from</p>
+      <h2>The brain</h2>
+      <p class="why">When the TA answers a doubt, it is not answering from the model’s own memory. Before you ever watch, I write about forty short notes — one per idea in Milestones 1 and 2 — each pinned to the moment in the lecture where Karpathy actually says it. When a doubt lands, the TA finds the two or three notes that fit and writes its reply <b>from those notes</b>, in your words. That is why a small OSS model is enough: it is rephrasing something already correct, not working it out.</p>
+      <p class="why">This is one of those forty notes, for tokenization, exactly as I would write it. Every answer the TA gives is built out of notes like this — so if this one reads wrong, they all will. That is what I need you to judge.</p>
+    </div>
+
+    <div class="stage" style="max-width:34rem">
+      <div class="side" style="border-radius:8px">
+        <div class="side-head"><span class="wordmark">Note</span><span class="chip">Tokenization · Milestone 1</span></div>
+        <div class="side-body" style="gap:0.9rem">
+          <p style="font-size:var(--t-item);font-weight:600;line-height:1.38">Text is chopped into a fixed vocabulary of pieces, and every piece becomes an integer id. That is the only thing the model ever sees.</p>
+          <p style="font-size:var(--t-second);line-height:1.6">Your keyboard does not think in letters and it does not think in words. It has a fixed dictionary of pieces — some are whole common words, some are fragments, some are a space plus a word — and it chops whatever you type into those pieces. Nothing outside the dictionary can be represented, so an unusual word gets broken into several pieces rather than rejected. Each piece has an id, and the id is arbitrary: it carries no meaning, it is a seat number. This is why a model’s cost is counted in tokens rather than words, why identifiers like <code>SetMethods</code> cost more than they look, and why a model can be strangely bad at spelling — it never saw the letters as letters.</p>
+          <div class="flag" style="border-left-color:var(--line)">
+            <p class="label" style="color:var(--muted)">The wrong version it watches for</p>
+            <p style="font-size:var(--t-second);line-height:1.6">“A token is a word.” Common enough that it survives a long time. It breaks the moment you paste code or a rare name and the count triples.</p>
+          </div>
+          <div class="cites"><span class="cite">13:22 — “these are just unique ids for text”</span><span class="cite">tiktokenizer, bookmarked 5 Sep</span></div>
+          <p class="caption">Leads on to: embeddings · context window · vocabulary size</p>
+        </div>
+      </div>
+    </div>
+
+    <ul class="second">
+      <li>The one-line summary at the top is what the TA uses when a doubt only brushes this idea. The paragraph is what it uses when the doubt is about this idea.</li>
+      <li>“The wrong version” is how a <b>Check this</b> gets triggered — a note of yours that matches it gets flagged. For temperature, the wrong version is the sentence you wrote on 7 Sept.</li>
+      <li>The timestamp is not decoration. It is how you check me: every answer that uses this note can point at 13:22 and you can go and listen.</li>
+      <li>The keyboard is the same example in every note for Milestones 1 and 2. One example, carried the whole way, rather than a new analogy each time.</li>
+    </ul>
+
+    <p class="second">If a thread on this idea asks for a poke, the hint below is the likely shape — a live splitter — and what it actually shows would come from the thread.</p>
+
+    <div class="widget" style="max-width:30rem">
+      <div class="whead"><span class="wname">Splitter</span><span class="wgen">built at break · 1:41</span></div>
+      <input id="tokin" type="text" value="Where is SetMethods?" spellcheck="false" aria-label="Text to tokenize">
+      <div class="tokline" id="tokline"></div>
+      <p class="tkids" id="tokids"></p>
+      <p class="wnote" id="toknote"></p>
+    </div>
+    <p class="caption">Shown here as an example of the hint’s shape. The default string is the Milestone 1 checkpoint question from <code>plan.json</code>. Splitting is illustrative; the real widget calls a tokenizer.</p>
+
+    <details>
+      <summary class="second" style="cursor:pointer">How this note is stored, for the builder</summary>
+      <pre style="margin-top:0.6rem"><span class="k">{</span>
+  <span class="k">"id"</span>: <span class="s">"c-tokenization"</span>,
+  <span class="k">"milestone"</span>: <span class="s">"d1"</span>,
+  <span class="k">"title"</span>: <span class="s">"Tokenization"</span>,
+  <span class="k">"prereqs"</span>: [],
+  <span class="k">"unlocks"</span>: [<span class="s">"c-embedding"</span>, <span class="s">"c-context-window"</span>, <span class="s">"c-vocab-size"</span>],
+  <span class="k">"cluster"</span>: <span class="s">"keyboard"</span>,
+  <span class="k">"oneLiner"</span>: <span class="s">"Text is chopped into a fixed vocabulary…"</span>,
+  <span class="k">"explanation"</span>: <span class="s">"Your keyboard does not think in letters…"</span>,
+  <span class="k">"wrongVersion"</span>: <span class="k">{</span>
+    <span class="k">"claim"</span>: <span class="s">"A token is a word."</span>,
+    <span class="k">"tell"</span>:  <span class="s">"counts words, surprised by code"</span>
+  <span class="k">}</span>,
+  <span class="k">"anchors"</span>: [
+    <span class="k">{</span> <span class="k">"src"</span>: <span class="s">"7xTGNNLPyMI"</span>, <span class="k">"t"</span>: 802,
+      <span class="k">"quote"</span>: <span class="s">"these are just unique ids for text"</span> <span class="k">}</span>
+  ],
+  <span class="k">"widgetHint"</span>: <span class="s">"live-splitter"</span>
+<span class="k">}</span></pre>
+    </details>
+  </section>
+
+  <!-- ============ ASKS ============ -->
+  <section class="stack">
+    <div class="sec-head">
+      <h2>What I need from you before I build</h2>
+      <p class="why">Comment on this page for anything else. Threads sent to Claude get answered and resolved here.</p>
+    </div>
+    <div class="asks">
+      <div class="ask"><span class="n">1</span><div><p class="lead">Is the voice right?</p><p class="det">The keyboard record above is the sample. If the register is wrong — too breezy, too long, the example not landing — say so now, because it sets the tone for about forty of them.</p></div></div>
+      <div class="ask"><span class="n">2</span><div><p class="lead">Does the keyboard carry both milestones?</p><p class="det">It handles tokens, probabilities, temperature and context cleanly. Attention is the stretch: “the suggestion changes when you go back and edit a word earlier in the sentence” is true but thin. If it snaps, we switch clusters at d2 rather than forcing it.</p></div></div>
+      <div class="ask"><span class="n">3</span><div><p class="lead">Does a check land async too, or only at the break?</p><p class="det">The mock lands it async, one muted line, same as an answer. The alternative is that only <code>#doubt</code> answers arrive live and claim-checks wait for the deeper pass — quieter, but the wrong note sits there longer.</p></div></div>
+      <div class="ask"><span class="n">4</span><div><p class="lead">Does “I think it is fine” need to reach me?</p><p class="det">If you overrule a flag, that is a strong signal — either the brain is wrong or the misconception is deep. It could ride along in the end-of-session digest, or stay entirely local.</p></div></div>
+      <div class="ask"><span class="n">5</span><div><p class="lead">Which OpenRouter models?</p><p class="det">I need one small model for composition and one reasoning model for “not convinced”. Name them, or I will pick and tell you what I picked.</p></div></div>
+    </div>
+  </section>
+
+  <footer>
+    Mockup only. No code written, no files touched. <code>plan.json</code>, the tracker templates and the tracker artifact are unmodified.
+  </footer>
+
+</main>
+
+<script>
+(function () {
+  // ---- sampling widget -------------------------------------------------
+  var CANDS = [
+    { t: "minutes", l: 3.2 },
+    { t: "mins",    l: 2.4 },
+    { t: "minute",  l: 1.9 },
+    { t: "seconds", l: 1.1 },
+    { t: "hours",   l: 0.6 },
+    { t: "days",    l: 0.1 }
+  ];
+  var bars = document.getElementById("bars");
+  var temp = document.getElementById("temp");
+  var tempval = document.getElementById("tempval");
+  var wnote = document.getElementById("wnote");
+
+  CANDS.forEach(function (c, i) {
+    var row = document.createElement("div");
+    row.className = "bar" + (i === 0 ? " top" : "");
+    row.innerHTML = '<span class="tok"></span><span class="meter"><i></i></span><span class="pct"></span>';
+    row.querySelector(".tok").textContent = c.t;
+    bars.appendChild(row);
+    c.el = row;
+  });
+
+  function draw() {
+    var T = Math.max(0.01, temp.value / 100);
+    tempval.textContent = (temp.value / 100).toFixed(2);
+    var max = -Infinity, ex = [], sum = 0;
+    CANDS.forEach(function (c) { if (c.l > max) max = c.l; });
+    CANDS.forEach(function (c) { var e = Math.exp((c.l - max) / T); ex.push(e); sum += e; });
+    CANDS.forEach(function (c, i) {
+      var p = ex[i] / sum;
+      c.el.querySelector("i").style.width = (p * 100).toFixed(1) + "%";
+      c.el.querySelector(".pct").textContent = (p * 100).toFixed(1) + "%";
+    });
+    var t = Number(temp.value) / 100;
+    wnote.textContent = t < 0.15
+      ? "Near 0: it takes “minutes” every time. Same answer, forever — right or wrong."
+      : t < 1.05
+        ? "The order is unchanged. Only how often it reaches past the top has moved."
+        : "Above 1 it will sometimes offer “hours”. Still the same ranking underneath.";
+  }
+  temp.addEventListener("input", draw);
+  draw();
+
+  // ---- splitter widget -------------------------------------------------
+  var tokin = document.getElementById("tokin");
+  var tokline = document.getElementById("tokline");
+  var tokids = document.getElementById("tokids");
+  var toknote = document.getElementById("toknote");
+  var COMMON = ["Where", "where", "is", "the", "a", "to", "of", "and", "in", "it", "Set", "Get", "for"];
+
+  function split(s) {
+    var out = [], re = /\s+|[A-Za-z]+|[0-9]+|./gu, m;
+    while ((m = re.exec(s)) !== null) {
+      var w = m[0];
+      if (/^\s+$/.test(w)) { out.push(w); continue; }
+      if (/^[A-Za-z]+$/.test(w)) {
+        var parts = w.match(/[A-Z]?[a-z]+|[A-Z]+(?![a-z])/g) || [w];
+        parts.forEach(function (p) {
+          if (COMMON.indexOf(p) !== -1 || p.length <= 7) { out.push(p); return; }
+          for (var i = 0; i < p.length; i += 4) out.push(p.slice(i, i + 4));
+        });
+        continue;
+      }
+      out.push(w);
+    }
+    // merge a space into the token that follows it, as real tokenizers do
+    var merged = [];
+    for (var i = 0; i < out.length; i++) {
+      if (/^\s+$/.test(out[i]) && i + 1 < out.length) { merged.push(out[i] + out[i + 1]); i++; }
+      else merged.push(out[i]);
+    }
+    return merged;
+  }
+  function idFor(s) {
+    var h = 2166136261;
+    for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = (h * 16777619) >>> 0; }
+    return h % 100000;
+  }
+  function render() {
+    var toks = split(tokin.value);
+    tokline.textContent = "";
+    var ids = [];
+    toks.forEach(function (t) {
+      var el = document.createElement("span");
+      el.className = "tk";
+      el.textContent = t.replace(/ /g, "·");
+      tokline.appendChild(el);
+      ids.push(idFor(t));
+    });
+    tokids.textContent = "[" + ids.join(", ") + "]";
+    var words = tokin.value.trim() ? tokin.value.trim().split(/\s+/).length : 0;
+    function pl(n, w) { return "<b>" + n + "</b> " + w + (n === 1 ? "" : "s"); }
+    toknote.innerHTML = words === 0
+      ? "Type something."
+      : pl(words, "word") + " → " + pl(toks.length, "token") + ". " +
+        (toks.length > words ? "Every extra one is paid for." : "One piece each — this time.");
+  }
+  tokin.addEventListener("input", render);
+  render();
+})();
+</script>

@@ -1,0 +1,319 @@
+<title>margin, start to finish</title>
+<style>
+:root { --bg:#faf8f4; --ink:#1c1b18; --muted:#78736a; --line:#e6e1d7; --card:#ffffff; --gold:#a8720a; --gold-soft:#f4ead2; --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif; --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif; --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; --t-body:17px; --t-item:15.5px; --t-second:15px; --t-caption:13px; color-scheme: light dark; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#131210; --ink:#e8e4dc; --muted:#8f887c; --line:#2a2721; --card:#1b1916; --gold:#e0b04f; --gold-soft:#2e2718; } }
+:root[data-theme="dark"] { --bg:#131210; --ink:#e8e4dc; --muted:#8f887c; --line:#2a2721; --card:#1b1916; --gold:#e0b04f; --gold-soft:#2e2718; }
+* { box-sizing:border-box; } html { background:var(--bg); }
+body { margin:0; background:var(--bg); color:var(--ink); font:400 var(--t-body)/1.6 var(--sans); -webkit-font-smoothing:antialiased; }
+main { max-width:56rem; margin:0 auto; padding:2.5rem 1.25rem 5rem; display:flex; flex-direction:column; gap:3.5rem; }
+p { margin:0; } h1,h2,h3 { margin:0; font-weight:600; text-wrap:balance; } h1 { font-size:20px; } h2 { font-size:var(--t-body); } h3 { font-size:var(--t-item); }
+ul { margin:0; padding-left:1.15rem; } li { margin:0.2rem 0; }
+code { font:0.88em var(--mono); background:var(--gold-soft); padding:0.05em 0.3em; border-radius:3px; }
+.eyebrow { font-size:var(--t-caption); text-transform:uppercase; letter-spacing:0.06em; font-weight:600; color:var(--muted); }
+.caption { font-size:var(--t-caption); color:var(--muted); } .second { font-size:var(--t-second); color:var(--muted); }
+.beyond { display:inline-block; font-size:11px; text-transform:uppercase; letter-spacing:0.05em; font-weight:600; color:var(--gold); border:1px solid var(--gold); border-radius:999px; padding:0.02rem 0.5rem; margin-left:0.4rem; vertical-align:middle; }
+
+/* a step: text left, frame right */
+.step { display:grid; grid-template-columns: minmax(0,1fr) 22.5rem; gap:1.5rem 2.5rem; align-items:start; }
+@media (max-width:820px) { .step { grid-template-columns:1fr; } }
+.step .text { display:flex; flex-direction:column; gap:0.7rem; max-width:34rem; }
+.step .text .n { font:600 var(--t-caption) var(--mono); color:var(--gold); }
+.step .text h2 { font-size:19px; }
+.step .text p { font-size:var(--t-second); color:var(--muted); line-height:1.6; }
+.step .text p b { color:var(--ink); }
+.did { display:grid; grid-template-columns:6.5rem 1fr; gap:0.3rem 0.8rem; font-size:var(--t-second); margin-top:0.3rem; }
+.did .k { font-size:var(--t-caption); text-transform:uppercase; letter-spacing:0.05em; font-weight:600; color:var(--muted); padding-top:0.15rem; }
+.did .v { color:var(--ink); } .did .v.none { color:var(--muted); font-style:italic; }
+
+/* the sidebar frame */
+.side { border:1px solid var(--line); border-radius:8px; background:var(--card); overflow:hidden; font-size:var(--t-second); }
+.side-head { display:flex; align-items:baseline; gap:0.5rem; padding:0.6rem 0.85rem 0.45rem; border-bottom:1px solid var(--line); }
+.side-head .wordmark { font-weight:600; font-size:var(--t-item); }
+.chip { margin-left:auto; font-size:var(--t-caption); color:var(--muted); border:1px solid var(--line); border-radius:999px; padding:0.05rem 0.55rem; white-space:nowrap; }
+.side-body { padding:0.75rem 0.85rem; display:flex; flex-direction:column; gap:0.75rem; }
+.srcline { font-size:var(--t-caption); color:var(--muted); } .srcline b { color:var(--ink); font-weight:600; font-variant-numeric:tabular-nums; }
+.composer textarea { width:100%; min-height:3rem; resize:none; font:400 var(--t-second)/1.5 var(--serif); color:var(--ink); background:var(--bg); border:1px solid var(--line); border-radius:6px; padding:0.45rem 0.55rem; }
+.composer .hint { font-size:var(--t-caption); color:var(--muted); margin-top:0.3rem; }
+.jot { padding:0.65rem 0; border-top:1px solid var(--line); display:flex; flex-direction:column; gap:0.3rem; }
+.meta { display:flex; align-items:center; gap:0.45rem; font-size:var(--t-caption); color:var(--muted); }
+.avatar { width:1.3rem; height:1.3rem; border-radius:50%; background:var(--gold-soft); color:var(--ink); font-weight:600; font-size:11px; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; }
+.avatar.ta { background:var(--ink); color:var(--bg); }
+.meta b { color:var(--ink); font-weight:600; } .meta .at, .reply .who .at { margin-left:auto; text-decoration:underline; text-decoration-color:var(--line); font-variant-numeric:tabular-nums; }
+.txt { font:400 var(--t-second)/1.5 var(--serif); }
+.collapsed { font-size:var(--t-caption); color:var(--muted); display:flex; gap:0.5rem; } .collapsed .n { margin-left:auto; } .collapsed .n.open { color:var(--gold); font-weight:600; }
+.ack { font-size:11px; color:var(--muted); border:1px solid var(--line); border-radius:999px; padding:0 0.4rem; margin-left:0.4rem; } .ack.on { border-color:transparent; }
+.star { color:var(--muted); font-size:var(--t-second); margin-left:0.3rem; } .star.on { color:var(--gold); }
+.reply { margin-top:0.4rem; border-left:2px solid var(--line); padding-left:0.7rem; display:flex; flex-direction:column; gap:0.3rem; }
+.reply.check { border-left-color:var(--gold); } .reply.you { border-left-color:var(--gold-soft); }
+.reply .who { font-size:var(--t-caption); color:var(--muted); display:flex; align-items:center; gap:0.45rem; } .reply .who b { color:var(--ink); } .reply.check .who b { color:var(--gold); }
+.reply .body { font-size:var(--t-second); line-height:1.55; } .reply .kb { font:400 var(--t-second)/1.5 var(--serif); color:var(--muted); }
+.cites { display:flex; gap:0.3rem; } .cite { font-size:var(--t-caption); color:var(--muted); border:1px solid var(--line); border-radius:4px; padding:0.02rem 0.35rem; }
+.acts { display:flex; gap:0.8rem; font-size:var(--t-caption); color:var(--muted); } .acts u { text-decoration-color:var(--line); }
+.pending { font-size:var(--t-caption); color:var(--muted); }
+.followup textarea { width:100%; min-height:2.2rem; resize:none; font:400 var(--t-second)/1.5 var(--serif); color:var(--muted); background:var(--bg); border:1px solid var(--line); border-radius:6px; padding:0.35rem 0.5rem; }
+.side-foot { border-top:1px solid var(--line); padding:0.55rem 0.85rem; font-size:var(--t-caption); color:var(--muted); }
+.empty { color:var(--muted); }
+
+/* the brain frame */
+.brain { border:1px solid var(--line); border-radius:8px; background:var(--bg); overflow:hidden; }
+.brain .bar { padding:0.45rem 0.75rem; border-bottom:1px solid var(--line); background:var(--card); font-size:var(--t-caption); color:var(--muted); }
+.brain .page { padding:1.25rem 1.15rem; }
+.mast { display:flex; align-items:baseline; justify-content:space-between; margin-bottom:1.25rem; } .mast .wordmark { font:600 20px/1 var(--serif); } .mast .dot { color:var(--gold); } .mast .sub { color:var(--muted); font-size:var(--t-caption); }
+.posts { list-style:none; padding:0; margin:0; } .posts li { display:grid; grid-template-columns:3.6rem 1fr; column-gap:0.75rem; padding:0.6rem 0; border-top:1px solid var(--line); } .posts li:last-child { border-bottom:1px solid var(--line); }
+.posts .day { color:var(--muted); font-size:var(--t-second); font-variant-numeric:tabular-nums; } .posts .title { font-weight:600; } .posts .why { color:var(--muted); font-size:var(--t-second); line-height:1.45; margin-top:0.15rem; }
+.brain h1 { font:600 24px/1.2 var(--serif); margin:0.4rem 0; } .brain .date { color:var(--muted); font-size:var(--t-caption); } .brain .summary { color:var(--muted); font-size:var(--t-second); line-height:1.5; }
+.brain h2 { font-size:var(--t-second); font-weight:700; margin:1.25rem 0 0.4rem; } .brain ul { font-size:var(--t-second); }
+.keep { margin:1rem 0 0; padding:0.75rem 0.9rem; border-left:3px solid var(--gold); background:var(--gold-soft); border-radius:0 6px 6px 0; font-size:var(--t-second); } .keep .eyebrow { display:block; color:var(--gold); margin-bottom:0.25rem; }
+
+/* summary tables */
+.two { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem 2.5rem; } @media (max-width:700px) { .two { grid-template-columns:1fr; } }
+.two h3 { margin-bottom:0.4rem; } .two ul { font-size:var(--t-second); color:var(--muted); } .two li b { color:var(--ink); }
+.asks { display:flex; flex-direction:column; }
+.ask { display:grid; grid-template-columns:1.6rem 1fr; gap:0.6rem; padding:0.75rem 0; border-top:1px solid var(--line); } .ask:last-child { border-bottom:1px solid var(--line); }
+.ask .n { font-size:var(--t-second); color:var(--muted); } .ask .lead { font-weight:600; font-size:var(--t-item); line-height:1.38; } .ask .det { font-size:var(--t-second); color:var(--muted); margin-top:0.15rem; }
+</style>
+
+<main>
+  <header style="display:flex;flex-direction:column;gap:0.5rem;max-width:40rem">
+    <p class="eyebrow">Storyboard · 10 September 2026</p>
+    <h1>margin, start to finish</h1>
+    <p class="second">One pass through the whole thing, from opening a lecture to the brain having the post — with every step that used to be a chore removed. Everything on this page is decided as of 10 September; the build list is at the bottom.</p>
+    <p class="second">The premise: there are three things — the lecture, the margin, the brain — and <b style="color:var(--ink)">no sessions</b>. Nothing is started, nothing is ended. You watch and write; the rest happens.</p>
+  </header>
+
+  <!-- ============ 1 ============ -->
+  <section class="step">
+    <div class="text">
+      <span class="n">1</span>
+      <h2>Open the lecture</h2>
+      <p>Zen, the video, the sidebar already pinned from last time. The panel recognises the video and shows what you wrote on it before — however long ago, however many sittings. No settings, no login, nothing to press.</p>
+      <div class="did"><span class="k">You did</span><span class="v none">nothing beyond opening the video</span><span class="k">Gone</span><span class="v">"start session"; re-entering the desk each time; the break; the milestone chip</span></div>
+    </div>
+    <div class="side">
+      <div class="side-head"><span class="wordmark">margin</span></div>
+      <div class="side-body">
+        <p class="srcline">Deep Dive into LLMs like ChatGPT · <b>1:41:02</b></p>
+        <div class="composer"><textarea placeholder="Write in the margin. Enter sends."></textarea></div>
+        <div>
+          <div class="jot"><p class="meta"><span class="avatar">K</span><b>Kaushik</b> · 21h</p><p class="txt">recap: knowledge in parameters = vague memory. knowledge in tokens of context window = working memory</p></div>
+          <div class="jot"><p class="meta"><span class="avatar">K</span><b>Kaushik</b> · 21h</p><p class="txt">mitigation 2: allow usage of tools like web search. how do you tell the models to use these tools? again do via training sets</p><p class="collapsed">Tool use is trained, not wired <span class="n">1 reply</span></p></div>
+          <div class="jot"><p class="meta"><span class="avatar">K</span><b>Kaushik</b> · 21h</p><p class="txt">we are just creating datasets to tell it when to say no. so how does it know that the next question it doesnt know…</p><p class="collapsed">How a model learns to say “I don’t know” <span class="n open">1 reply</span></p></div>
+        </div>
+      </div>
+      <div class="side-foot">21 notes · 2 awaiting you</div>
+    </div>
+  </section>
+
+  <!-- ============ 2 ============ -->
+  <section class="step">
+    <div class="text">
+      <span class="n">2</span>
+      <h2>Write in the margin</h2>
+      <p>Type, Enter. That is the entire interaction. <b>No checkbox either</b>: the TA reads what you wrote and decides. A question — it ends in “?”, or starts with how, why, what, is, does, can — gets answered. A statement gets the silent check. If you ever want an answer to a statement, put a question mark on it.</p>
+      <p>Decided: no checkbox. The note already says which it is nineteen times out of twenty, and the twentieth costs you a “?”.</p>
+      <div class="did"><span class="k">You did</span><span class="v">typed two lines</span><span class="k">Gone</span><span class="v">tags, #doubt, the Doubt/Note buttons, the Ask checkbox</span></div>
+    </div>
+    <div class="side">
+      <div class="side-head"><span class="wordmark">margin</span></div>
+      <div class="side-body">
+        <p class="srcline">Deep Dive into LLMs like ChatGPT · <b>1:47:30</b></p>
+        <div class="composer"><textarea>so RL here is different from RLHF because there is a checkable answer?</textarea><p class="hint">Ends in a question mark: the TA will answer it.</p></div>
+        <div>
+          <div class="jot"><p class="meta"><span class="avatar">K</span><b>Kaushik</b> · just now</p><p class="txt">DeepSeek R1 learned to think longer by itself, nobody told it to</p><p class="pending">Reading…</p></div>
+          <div class="jot"><p class="meta"><span class="avatar">K</span><b>Kaushik</b> · 21h</p><p class="txt">recap: knowledge in parameters = vague memory. knowledge in tokens of context window = working memory</p></div>
+        </div>
+      </div>
+      <div class="side-foot">22 notes · 2 awaiting you</div>
+    </div>
+  </section>
+
+  <!-- ============ 3 ============ -->
+  <section class="step">
+    <div class="text">
+      <span class="n">3</span>
+      <h2>Replies land, quietly</h2>
+      <p>The statement was fine: nothing appears, and that silence is the record. The question gets one muted line. Open it, and you can reply into the thread like any comment; the TA answers with the thread in view. <b>When the notes are not enough it says so to itself and thinks harder</b> — the reply just takes a few seconds longer and reads “thought about it”. No button for that.</p>
+      <p>Every reply carries a 👍. Press it and that reply needs nothing more from you; the footer counts only what is still <b>awaiting you</b>, and the gold <i>N replies</i> goes quiet once a thread is acked. Or reply, which is the other way to keep it going.</p>
+      <p>Want something to play with? Say so in the thread — “show me”, “a slider for this” — and the TA builds it as its reply, in about five seconds, from your note and the answer. No button.</p>
+      <div class="did"><span class="k">You did</span><span class="v">opened a thread, typed a follow-up</span><span class="k">Gone</span><span class="v">"Not convinced"; "Poke at it"; the poke queue; "go deeper on all notes"; the row of timestamp chips — one “at” link on the reply, like your notes; the "Check this" and "Answered" labels</span></div>
+    </div>
+    <div class="side">
+      <div class="side-head"><span class="wordmark">margin</span></div>
+      <div class="side-body">
+        <p class="srcline">Deep Dive into LLMs like ChatGPT · <b>1:52:10</b></p>
+        <div>
+          <div class="jot">
+            <p class="meta"><span class="avatar">K</span><b>Kaushik</b> · 4m <span class="at">at 1:47:30</span></p>
+            <p class="txt">so RL here is different from RLHF because there is a checkable answer?</p>
+            <div class="reply"><p class="who"><span class="avatar ta">TA</span><b>TA</b> · 4m <span class="at">at 2:14:20</span><span class="ack on">👍 ok</span></p><p class="caption" style="font-weight:600">Reinforcement learning</p><p class="body">Yes, that is the difference. In RL on maths the answer is checkable, so the model can try thousands of attempts and keep the ones that reach it, with no human in the loop. In RLHF there is no checkable answer, so a reward model trained on human rankings stands in for one, and Karpathy’s caveat is that it is a lossy simulation of a person that can be gamed.</p></div>
+            <div class="reply you"><p class="who"><span class="avatar">K</span><b>Kaushik</b> · 2m</p><p class="kb">why can it be gamed if humans ranked the data?</p></div>
+            <div class="reply"><p class="who"><span class="avatar ta">TA</span><b>TA · thought about it</b> · 1m <span class="at">at 3:01:00</span><span class="ack">👍</span></p><p class="body">Because the reward model is not the humans, it is a network trained to imitate their rankings on a finite set. Optimise hard against any imitation and you find inputs where it is wrong: strings that score high with the reward model and mean nothing to a person. Karpathy shows “the the the” scoring as a top answer. That is why RLHF runs for a limited number of steps and then stops.</p></div>
+            <div class="reply you"><p class="who"><span class="avatar">K</span><b>Kaushik</b> · now</p><p class="kb">show me how a reward model gets gamed</p></div>
+            <div class="reply"><p class="who"><span class="avatar ta">TA</span><b>TA · built</b> · now <span class="ack" style="margin-left:auto">👍</span></p><p class="body caption">Reward hacking · a slider for optimisation steps against a fixed reward model: the score climbs, the sentence turns to “the the the”.</p></div>
+            <div class="followup"><textarea placeholder="Reply… Enter sends."></textarea></div>
+          </div>
+          <div class="jot"><p class="meta"><span class="avatar">K</span><b>Kaushik</b> · 21h</p><p class="txt">Temperature = how much tolerance we have with the probability. low temperature = higher accuracy</p><p class="collapsed">Low temperature makes it repeatable, not accurate… <span class="n open">1 reply</span></p></div>
+        </div>
+      </div>
+      <div class="side-foot">22 notes · 3 awaiting you</div>
+    </div>
+  </section>
+
+  <!-- ============ 3b ============ -->
+  <section class="step">
+    <div class="text">
+      <span class="n">3b</span>
+      <h2>Star what you want to keep</h2>
+      <p>Next to the 👍 on every reply there is a ☆, and each of your own notes has one too. A star says <b>this is a thing to remember</b> — your note, your question, or the TA’s answer, it does not matter which. On a reply it is the bigger ack: it acknowledges and keeps.</p>
+      <p>That is all a star does in the panel. Its real job is in the brain: the post’s “Things to remember” is exactly the starred items, quoted as they are, in lecture order. Star nothing and the post has no such block. No <code>#key</code>, no model deciding what mattered.</p>
+      <div class="did"><span class="k">You did</span><span class="v">pressed ☆ twice</span><span class="k">Gone</span><span class="v">tags; the keep block as a separate thing to write; any summary line the model would have written for you</span></div>
+    </div>
+    <div class="side">
+      <div class="side-head"><span class="wordmark">margin</span></div>
+      <div class="side-body">
+        <p class="srcline">Deep Dive into LLMs like ChatGPT · <b>1:52:40</b></p>
+        <div>
+          <div class="jot">
+            <p class="meta"><span class="avatar">K</span><b>Kaushik</b> · 5m <span class="at">at 1:47:30</span> <span class="star">☆</span></p>
+            <p class="txt">so RL here is different from RLHF because there is a checkable answer?</p>
+            <div class="reply"><p class="who"><span class="avatar ta">TA</span><b>TA</b> · 5m <span class="at">at 2:14:20</span><span class="ack on">👍 ok</span><span class="star on">★</span></p><p class="caption" style="font-weight:600">Reinforcement learning</p><p class="body">Yes, that is the difference. In RL on maths the answer is checkable, so the model can try thousands of attempts and keep the ones that reach it, with no human in the loop. In RLHF there is no checkable answer, so a reward model trained on human rankings stands in for one…</p></div>
+          </div>
+          <div class="jot">
+            <p class="meta"><span class="avatar">K</span><b>Kaushik</b> · 21h <span class="star on">★</span></p>
+            <p class="txt">recap: knowledge in parameters = vague memory. knowledge in tokens of context window = working memory</p>
+          </div>
+        </div>
+      </div>
+      <div class="side-foot">22 notes · 2 awaiting you</div>
+    </div>
+  </section>
+
+  <!-- ============ 4 ============ -->
+  <section class="step">
+    <div class="text">
+      <span class="n">4</span>
+      <h2>Close the laptop</h2>
+      <p>That is the end of the session, and nothing marks it. Every note and reply is already on the desk. There is no button, no digest, no export to remember. Tomorrow, or next week, opening the video puts you back where you were.</p>
+      <div class="did"><span class="k">You did</span><span class="v none">nothing</span><span class="k">Gone</span><span class="v">End session; the clipboard digest to the tracker; <code>npm run export</code>; "properly closed"</span></div>
+    </div>
+    <div class="side">
+      <div class="side-head"><span class="wordmark">margin</span></div>
+      <div class="side-body empty"><p>Open a YouTube lecture in this window.</p><p class="caption">The panel follows the active tab.</p></div>
+    </div>
+  </section>
+
+  <!-- ============ 5 ============ -->
+  <section class="step">
+    <div class="text">
+      <span class="n">5</span>
+      <h2>The brain updates itself</h2>
+      <p>At ten every night, a launchd job — the same shape as antifeed’s and fiveaside’s — asks the desk which videos have new notes, regenerates each one’s post, commits it to the brain repo and deploys. If nothing changed, it does nothing. <b>You never run a command.</b> One post per video, all sittings merged, key concepts in your words on top, the margin below, widgets as stills.</p>
+      <p><b>Decided:</b> the job is margin’s. <code>com.kb.margin</code> lives in the margin repo and is the only thing that moves; the brain stays dumb — a static site that runs nothing and knows nothing about margin. margin writes into the brain’s <code>posts/</code> files it owns plus their index rows, commits, deploys. The brain’s own rule (“nothing posted or deployed unless KB asks”) gets one documented exception, named in <code>brain/AGENTS.md</code>: margin’s resource posts.</p>
+      <div class="did"><span class="k">You did</span><span class="v none">nothing</span><span class="k">Gone</span><span class="v"><code>npm run notes</code>, <code>npm run brain</code>, committing the brain, deploying the brain, publishing an artifact</span></div>
+    </div>
+    <div class="brain">
+      <div class="bar">brain.kaushikbhat.com · next morning</div>
+      <div class="page">
+        <div class="mast"><span class="wordmark">brain<span class="dot">.</span></span><span class="sub">things worth reading twice</span></div>
+        <ul class="posts">
+          <li><span class="day">11 Sep</span><div><span class="title">Deep Dive into LLMs like ChatGPT</span><div class="why">Karpathy’s lecture with my notes in the margin: 22 notes, 9 concepts, two of my own claims corrected.</div></div></li>
+          <li><span class="day">05 Sep</span><div><span class="title">A Range boundary on an element counts children, not characters</span><div class="why">Why select-all and double-click silently broke text anchoring.</div></div></li>
+        </ul>
+        <div style="margin-top:1.5rem;padding-top:1.25rem;border-top:1px dashed var(--line)">
+          <p class="date">Last added 11 September 2026 · from 5 September</p>
+          <h1>Deep Dive into LLMs like ChatGPT</h1>
+          <p class="summary">Andrej Karpathy, 3h31m. My notes in the margin as I watched, the TA’s replies under them, and the two things I wrote down confidently that were wrong. 22 notes, 9 concepts touched.</p>
+          <h2>Key concepts</h2>
+          <ul>
+            <li>Temperature is how adventurous the sampling is. <b>Low temperature is repeatable, not accurate.</b></li>
+            <li>RL on maths has a checkable answer, so no human is needed; RLHF stands a reward model in for one, and it can be gamed.</li>
+            <li>Knowledge in parameters = vague memory. Knowledge in the context window = working memory.</li>
+          </ul>
+          <div class="keep"><span class="eyebrow">Things to remember · starred</span>
+            <p style="margin:0 0 .4rem"><b>Kaushik, 1:39:50</b> — recap: knowledge in parameters = vague memory. knowledge in tokens of context window = working memory</p>
+            <p style="margin:0"><b>TA, 2:14:20</b> — In RL on maths the answer is checkable, so the model can try thousands of attempts and keep the ones that reach it. In RLHF a reward model trained on human rankings stands in for one.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 6 ============ -->
+  <section class="step">
+    <div class="text">
+      <span class="n">6</span>
+      <h2>A new lecture</h2>
+      <p>You open a video the desk has never seen. Today that is a dead end until someone fetches the transcript and writes forty brain notes. Instead: <b>the desk fetches the transcript itself on the first note</b> and answers from the lecture alone, saying so in the reply. The check works too — a claim can be tested against what the speaker said. What is missing is the concept notes, so answers cite the transcript rather than a note and lean on the reasoning model more.</p>
+      <p>When a video earns its brain — you are going to spend hours on it — one line to Claude in a session (“write the brain for kCc8FmEb1nY”) produces the notes, anchored and checked like the first two. Papers and essays are the same shape once the page text is captured; that is the next step after YouTube, not this one.</p>
+      <div class="did"><span class="k">You did</span><span class="v">opened a video, wrote a note</span><span class="k">Gone</span><span class="v"><code>npm run transcript</code> before you can start; the brain as a prerequisite</span></div>
+    </div>
+    <div class="side">
+      <div class="side-head"><span class="wordmark">margin</span></div>
+      <div class="side-body">
+        <p class="srcline">Let’s build GPT: from scratch, in code, spelled out · <b>0:14:20</b></p>
+        <div class="composer"><textarea placeholder="Write in the margin. Enter sends."></textarea></div>
+        <div>
+          <div class="jot">
+            <p class="meta"><span class="avatar">K</span><b>Kaushik</b> · just now</p>
+            <p class="txt">why plus one in block size?</p>
+            <div class="reply"><p class="who"><span class="avatar ta">TA</span><b>TA</b> · just now <span class="at">at 15:18</span></p><p class="body">Because a chunk of block size plus one characters gives you block size training examples at once: the first character predicts the second, the first two predict the third, and so on up to the whole block predicting the last. The extra one is the final target.</p><p class="caption">From the lecture only — no notes for this video yet.</p></div>
+          </div>
+        </div>
+      </div>
+      <div class="side-foot">1 note · 1 answered</div>
+    </div>
+  </section>
+
+  <!-- ============ UNDER IT ============ -->
+  <section style="display:flex;flex-direction:column;gap:1rem;max-width:40rem">
+    <p class="eyebrow">What is under it</p>
+    <h2>The desk, and how margin talks to it</h2>
+    <p class="second">margin is two halves. The <b style="color:var(--ink)">sidebar</b> is the extension in Zen: what you see and type. The <b style="color:var(--ink)">desk</b> is a small server on Cloudflare — <code>margin-3d0.pages.dev</code> — that the sidebar talks to. It is the TA’s desk: where the TA sits, and where the notebook is kept. It has three jobs and no front page.</p>
+    <div class="did" style="grid-template-columns:8rem 1fr">
+      <span class="k">Holds the key</span><span class="v">The OpenRouter key lives only on the desk. The sidebar never has it, so nothing in your browser can leak it. Every reply is: sidebar → desk → GLM → desk → sidebar.</span>
+      <span class="k">Keeps the notebook</span><span class="v">Every note, reply, ack and star is stored on the desk (Cloudflare KV). That is why any Firefox profile or machine shows the same threads, why a reinstall loses nothing, and why the nightly job can read it all without your laptop being on.</span>
+      <span class="k">Serves the static bits</span><span class="v">The brain notes, the transcripts, and the sandboxed page a widget runs in. The sidebar fetches them; they never ship inside the extension.</span>
+    </div>
+    <p class="second"><b style="color:var(--ink)">How they connect.</b> Once, in the gear: the desk’s address and a token you made up. After that, every time you press Enter the sidebar sends the note to the desk (<code>PUT /api/notes</code>) and asks for a reply (<code>POST /api/ask</code>); on opening a video it pulls the threads down (<code>GET /api/notes</code>). All over HTTPS with the token in a header; the desk refuses anything without it. The sidebar also keeps a local copy, so it renders instantly and works with the desk down — the desk is the truth, the copy is the cache.</p>
+    <p class="second"><b style="color:var(--ink)">What the desk does when asked.</b> It finds the two or three brain notes closest to your note — by words, and by where you are in the lecture — hands them to GLM with a strict shape to fill in, checks the shape (one concept, under 170 words, a real timestamp, no numbers that are not in the notes), and stores the reply. If GLM says the notes were not enough, the desk sends the same question to the bigger model with the transcript, and you see that reply instead. If you asked to be shown something, it builds the widget. None of that is in the sidebar; the sidebar only shows what comes back.</p>
+    <p class="second"><b style="color:var(--ink)">The nightly job</b> is a third piece, on your laptop: <code>com.kb.margin</code> asks the desk which videos changed, renders their posts, commits them to the brain and deploys. The desk does not know the brain exists; the brain does not know margin exists.</p>
+  </section>
+
+  <!-- ============ SUMMARY ============ -->
+  <section class="two">
+    <div>
+      <h3>What is left</h3>
+      <ul>
+        <li><b>One box.</b> Type, Enter. Questions answered, statements checked.</li>
+        <li><b>Threads.</b> Reply under any answer; the TA thinks harder on its own when it has to.</li>
+        <li><b>Ask to be shown</b> in a thread and the widget is the reply.</li>
+        <li><b>👍</b> on any reply to say it needs nothing more; <b>☆</b> on anything to keep it; <b>Keep my version</b> on a correction.</li>
+        <li><b>The brain post</b>, regenerated nightly, one per video.</li>
+        <li>Settings, once. The gear.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>What is gone</h3>
+      <ul>
+        <li>Sessions: start, end, break, digest, export.</li>
+        <li>Tags, the Ask checkbox, Doubt/Note buttons.</li>
+        <li>"Not convinced", "Poke at it", "go deeper on all", timestamp chips.</li>
+        <li>The tracker coupling. The tracker is the plan; margin is the notebook; the brain is the record.</li>
+        <li>Every terminal command after install.</li>
+        <li>The milestone chip; the "Check this" imperative.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section style="display:flex;flex-direction:column;gap:0.85rem">
+    <h2>Decided, 10 September</h2>
+    <div class="asks">
+      <div class="ask"><span class="n">1</span><div><p class="lead">No checkbox. Questions answered, statements checked.</p><p class="det">A note ending in “?” or starting with how / why / what / when / where / which / who / is / are / does / do / did / can / could / would / should / will is answered; anything else gets the silent check. Want an answer to a statement, end it with a question mark.</p></div></div>
+      <div class="ask"><span class="n">2</span><div><p class="lead">Nightly writer into the brain, owned by margin.</p><p class="det">The launchd job lives in the margin repo; the brain runs nothing. One documented exception to the brain’s rule, scoped to margin’s resource posts.</p></div></div>
+      <div class="ask"><span class="n">3</span><div><p class="lead">Stars, not a keep block.</p><p class="det">☆ on any note or reply; on a reply it is the bigger ack. The brain post’s “Things to remember” is the starred items, quoted as they are, in lecture order. Nothing starred, no block.</p></div></div>
+      <div class="ask"><span class="n">4</span><div><p class="lead">New lectures work on the first note.</p><p class="det">The desk fetches the transcript itself (page-side fallback if YouTube refuses the worker) and answers from the lecture alone until the video has a brain, saying so under the reply.</p></div></div>
+    </div>
+  </section>
+
+  <footer class="caption" style="border-top:1px solid var(--line);padding-top:1rem">Shipped through 0.1.6: threads as conversations, automatic escalation, ask-to-be-shown widgets, one anchor per reply, 👍 acks and the awaiting-you footer. Not yet built, one shot on your go: no checkbox; ☆ stars; transcript on first note; the brain renderer (one post per video, starred items as the keep block, widget stills) and <code>com.kb.margin</code> nightly.</footer>
+</main>
