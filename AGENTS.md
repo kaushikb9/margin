@@ -19,8 +19,8 @@ lands as one muted line under the note. A thread is a conversation: a
 follow-up is answered with the thread in view, and when the notes are not
 enough the desk escalates to the reasoning model on its own (`enough: false`
 from the composer). Asking to be shown something ("show me", "slider") in
-a follow-up builds a widget as the reply. ☆ stars mark a thing to remember;
-a star on a reply also acks it. There is no break, no session, no end: the
+a follow-up builds a widget as the reply. ☆ stars mark a thing to remember. Nothing
+is owed on a reply: no acks, no count of what awaits you. There is no break, no session, no end: the
 brain post is regenerated from whatever is in KV.
 
 Built 2026-09-10 from `docs/history/learn-app-plan.md` and the mockup at
@@ -100,7 +100,7 @@ notes/                        rendered class notes (gitignored; the artifact is 
 One writer per key.
 
 - `note:<videoId>:<noteId>` — written by the extension only:
-  `{id, src, t, text, tags[], acks[], stars[], overruled, createdAt, updatedAt}`.
+  `{id, src, t, text, tags[], stars[], overruled, createdAt, updatedAt}`.
   `t` is seconds into the video when the note was jotted. `tags` is `#doubt`
   or empty. `stars` holds reply ids plus `'note'` for the note itself; the
   brain post's keep block is written from them.

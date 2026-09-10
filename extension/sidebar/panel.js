@@ -108,7 +108,7 @@ async function mergeFromDesk() {
   try {
     const r = await desk(`/api/notes?source=${encodeURIComponent(page.videoId)}`);
     const byId = new Map(session.notes.map(n => [n.id, n]));
-    for (const n of r.notes || []) { const local = byId.get(n.id); if (!local) session.notes.push({ ...n, status: 'synced' }); else { local.acks = [...new Set([...(local.acks || []), ...(n.acks || [])])]; local.stars = [...new Set([...(local.stars || []), ...(n.stars || [])])]; local.overruled = local.overruled || Boolean(n.overruled); } }
+    for (const n of r.notes || []) { const local = byId.get(n.id); if (!local) session.notes.push({ ...n, status: 'synced' }); else { local.stars = [...new Set([...(local.stars || []), ...(n.stars || [])])]; local.overruled = local.overruled || Boolean(n.overruled); } }
     const seen = new Set(session.replies.map(x => x.id));
     for (const x of r.replies || []) if (!seen.has(x.id)) session.replies.push(x);
     session.notes.sort((a, b) => a.t - b.t || a.createdAt.localeCompare(b.createdAt));
@@ -117,7 +117,7 @@ async function mergeFromDesk() {
 }
 async function pushNote(n) {
   if (!haveDesk()) return;
-  try { await desk('/api/notes', { method: 'PUT', body: { source: page.videoId, note: { id: n.id, text: n.text, tags: n.tags, t: n.t, createdAt: n.createdAt, acks: n.acks || [], stars: n.stars || [], overruled: Boolean(n.overruled) } } }); n.status = 'synced'; }
+  try { await desk('/api/notes', { method: 'PUT', body: { source: page.videoId, note: { id: n.id, text: n.text, tags: n.tags, t: n.t, createdAt: n.createdAt, stars: n.stars || [], overruled: Boolean(n.overruled) } } }); n.status = 'synced'; }
   catch (e) { n.status = 'local'; status(`desk: ${e.message}`); }
   await saveSession();
 }
@@ -175,12 +175,10 @@ async function route(n) {
 }
 const repliesFor = id => session.replies.filter(r => r.noteId === id);
 const TA_KINDS = ['answer', 'deeper', 'check', 'widget'];
-const awaiting = n => repliesFor(n.id).filter(r => TA_KINDS.includes(r.kind) && !(n.acks || []).includes(r.id));
-async function ack(n, r) { n.acks = [...new Set([...(n.acks || []), r.id])]; await saveSession(); render(); await pushNote(n); }
-// A star is the bigger ack: on a reply it also acknowledges it. 'note' stars the note itself.
+// A star means "remember this". Nothing is owed on a reply; reading it is reading it.
 async function star(n, id) {
   const set = new Set(n.stars || []);
-  if (set.has(id)) set.delete(id); else { set.add(id); if (id !== 'note') n.acks = [...new Set([...(n.acks || []), id])]; }
+  if (set.has(id)) set.delete(id); else set.add(id);
   n.stars = [...set]; await saveSession(); render(); await pushNote(n);
 }
 const starred = (n, id) => (n.stars || []).includes(id);
@@ -229,7 +227,7 @@ function render() {
   $('srcTitle').textContent = page.title || page.videoId || '';
 
   const notes = session.notes;
-  // Just the count. Acks and stars are reactions, not a queue you owe.
+  // Just the count. Nothing here is a queue you owe.
   $('count').textContent = notes.length ? `${notes.length} note${notes.length === 1 ? '' : 's'}` : '';
 
   if (view === 'main') renderQueue(notes);
@@ -272,7 +270,7 @@ function renderNote(n) {
     if (last.kind === 'check') line.appendChild(document.createTextNode((last.correction || '').split(/(?<=[.!?])\s/)[0].slice(0, 60) + '…'));
     else if (last.kind === 'error') line.appendChild(el('b', null, 'Could not answer'));
     else line.appendChild(document.createTextNode(last.title || (last.kind === 'you' ? 'You replied' : last.kind === 'widget' ? 'Built' : '')));
-    line.appendChild(el('span', 'n' + (awaiting(n).length ? ' open' : ''), `${replies.length} ${replies.length === 1 ? 'reply' : 'replies'}`));
+    line.appendChild(el('span', 'n', `${replies.length} ${replies.length === 1 ? 'reply' : 'replies'}`));
     line.onclick = () => { open.add(n.id); render(); };
     body.appendChild(line);
   } else if (replies.length) {
@@ -322,11 +320,6 @@ function renderReply(n, r) {
   if (r.title && r.kind !== 'check') box.appendChild(el('p', 'rtitle', r.title));
   if (r.fromLecture) box.appendChild(el('p', 'why', 'From the lecture only, no notes for this video yet.'));
   if (TA_KINDS.includes(r.kind)) {
-    const acked = (n.acks || []).includes(r.id);
-    const b = el('button', 'ack' + (acked ? ' on' : ''), acked ? '👍 ok' : '👍');
-    b.title = acked ? 'Acknowledged' : 'Nothing more needed on this';
-    if (!acked) b.onclick = () => ack(n, r);
-    who.appendChild(b);
     const st = el('button', 'star' + (starred(n, r.id) ? ' on' : ''), starred(n, r.id) ? '★' : '☆'); st.title = 'Star: a thing to remember'; st.onclick = () => star(n, r.id); who.appendChild(st);
   }
 
