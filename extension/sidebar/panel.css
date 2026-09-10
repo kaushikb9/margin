@@ -70,7 +70,7 @@ main { flex: 1; overflow-y: auto; }
 
 /* queue */
 .queue { display: flex; flex-direction: column; }
-.jot { display: grid; grid-template-columns: 2.4rem 1fr; gap: 0.5rem; padding: 0.6rem 0; border-top: 1px solid var(--line); }
+.jot { display: grid; grid-template-columns: minmax(2.4rem, max-content) 1fr; gap: 0.5rem; padding: 0.6rem 0; border-top: 1px solid var(--line); }
 .jot .at { font-size: var(--t-caption); color: var(--muted); font-variant-numeric: tabular-nums; }
 .jot .at button { color: inherit; text-decoration: underline; text-decoration-color: var(--line); }
 .jot .txt { font: 400 var(--t-second)/1.5 var(--serif); white-space: pre-wrap; overflow-wrap: anywhere; }
@@ -116,7 +116,7 @@ main { flex: 1; overflow-y: auto; }
 
 /* break */
 .sweep { display: flex; flex-direction: column; }
-.sweep .row { display: grid; grid-template-columns: 2.4rem 1fr auto; gap: 0.5rem; padding: 0.5rem 0; border-top: 1px solid var(--line); font-size: var(--t-second); align-items: baseline; }
+.sweep .row { display: grid; grid-template-columns: minmax(2.4rem, max-content) 1fr auto; gap: 0.5rem; padding: 0.5rem 0; border-top: 1px solid var(--line); font-size: var(--t-second); align-items: baseline; }
 .sweep .row .at { font-size: var(--t-caption); color: var(--muted); font-variant-numeric: tabular-nums; }
 .sweep .row .t { font-family: var(--serif); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sweep .row .st { font-size: var(--t-caption); color: var(--muted); white-space: nowrap; }
