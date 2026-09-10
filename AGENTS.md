@@ -121,8 +121,10 @@ change: `TA_MODEL_COMPOSER`, `TA_MODEL_CHECKER`, `TA_MODEL_DEEPER`,
 1. `npm run dev` (or deploy), note the URL.
 2. Zen → `about:debugging#/runtime/this-firefox` → **Load Temporary Add-on**
    → pick `extension/manifest.json`. This resets on restart.
-3. Open the margin sidebar (View → Sidebar, or the toolbar button), press the
-   gear, enter the desk URL and `TA_TOKEN`, **Test**, **Save**.
+3. Open the margin sidebar (View → Sidebar, or the toolbar button). On a
+   signed install it first asks to **Allow on youtube.com** — press it (or
+   turn it on under about:addons → margin → Permissions) and reload the
+   lecture tab. Then the gear: desk URL and `TA_TOKEN`, **Test**, **Save**.
 4. For a permanent install: `npm run ext` (writes margin-extension.zip), sign the zip as **unlisted** on
    addons.mozilla.org (free, no listing), install the signed `.xpi`. Zen
    blocks unsigned add-ons and ignores `xpinstall.signatures.required`.
@@ -204,6 +206,12 @@ page — the desk is a key-holder, a notebook and a sandbox, not a site.
   ranked a neighbouring note above the one the jot literally named; at 0.6×
   with lexical damped by confidence, both cases pass (`tests/retrieve.test.js`
   carries KB's real doubts as the fixture).
+- **Firefox MV3 grants host access to temporary add-ons and withholds it from
+  installed ones.** The signed build showed "Open a YouTube lecture" on a
+  tab that had the lecture open, with a blank console: the content script
+  was never injected. `host_permissions` declares youtube.com so it appears
+  under about:addons → Permissions, and the panel shows an *Allow on
+  youtube.com* button (`permissions.request`) when access is missing.
 - **Firefox keeps extension CSS cached across a temporary-add-on reload.** A
   stylesheet change shipped with a script change rendered as new JS in the
   old layout. `panel.html` links `panel.css?v=N` and the css file's first

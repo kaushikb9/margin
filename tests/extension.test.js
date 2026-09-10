@@ -12,7 +12,7 @@ test('manifest: MV3, sidebar, gecko id, youtube content script', () => {
   assert.ok(manifest.sidebar_action?.default_panel);
   assert.ok(manifest.browser_specific_settings?.gecko?.id);
   assert.ok(manifest.content_scripts.some(c => c.matches.some(m => m.includes('youtube.com'))));
-  assert.ok(!manifest.host_permissions, 'no host permissions: the desk allows CORS, so none are needed');
+  assert.deepEqual(manifest.host_permissions, ['*://www.youtube.com/*'], 'youtube.com host access: Firefox MV3 leaves it off for installed add-ons, so it is declared and requested from the panel');
 });
 
 test('no CDN or remote script anywhere in the extension', () => {

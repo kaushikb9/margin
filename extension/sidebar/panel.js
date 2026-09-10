@@ -67,6 +67,11 @@ async function activeTab() {
   const tabs = await api.tabs.query({ active: true, currentWindow: true });
   return tabs[0] || null;
 }
+const YT = { origins: ['*://www.youtube.com/*'] };
+let hasAccess = true;
+async function checkAccess() {
+  try { hasAccess = api.permissions?.contains ? await api.permissions.contains(YT) : true; } catch { hasAccess = true; }
+}
 let lastMerge = 0;
 async function pollPage() {
   // A fresh install, or a desk configured after the video loaded, must not
@@ -157,7 +162,8 @@ const lastSubstantive = id => [...repliesFor(id)].reverse().find(r => ['answer',
 function status(msg) { for (const id of ['breakStatus', 'deskStatus', 'mainStatus']) { const e = $(id); if (e) e.textContent = msg; } }
 function render() {
   const onSource = Boolean(page.videoId);
-  $('offsource').hidden = onSource || view === 'settings';
+  $('noaccess').hidden = hasAccess || view === 'settings';
+  $('offsource').hidden = onSource || !hasAccess || view === 'settings';
   $('nodesk').hidden = !onSource || haveDesk() || view === 'settings';
   $('main').hidden = !onSource || view !== 'main';
   $('break').hidden = view !== 'break';
@@ -372,10 +378,15 @@ $('settingsBtn').onclick = () => { view = view === 'settings' ? 'main' : 'settin
 $('saveSettings').onclick = saveSettings;
 $('testDesk').onclick = testDesk;
 $('deeperAll').onclick = deeperAll;
+$('grantAccess').onclick = async () => {
+  try { hasAccess = await api.permissions.request(YT); } catch (e) { status(`could not request access: ${e.message}`); }
+  render(); if (hasAccess) status('Allowed. Reload the lecture tab once.');
+};
 $('endSession').onclick = endSession;
 
 (async () => {
   await loadSettings();
+  await checkAccess();
   await pollPage();
   tick = setInterval(pollPage, 2000);
   api.tabs.onActivated?.addListener(pollPage);
