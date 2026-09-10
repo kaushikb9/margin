@@ -1,6 +1,6 @@
 {
   "name": "margin",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "private": true,
   "description": "margin: a Firefox sidebar that sits in the margin of a lecture. Jot as you go; the TA answers and checks under your notes from a precomputed concept brain.",
   "type": "module",

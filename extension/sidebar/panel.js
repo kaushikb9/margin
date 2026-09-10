@@ -28,7 +28,6 @@ const fmt = t => { t = Math.max(0, Math.floor(t || 0)); const h = Math.floor(t /
 const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
 
-const SOURCES = { '7xTGNNLPyMI': 'Milestone 1', 'kCc8FmEb1nY': 'Milestone 2' };
 
 // ---------- state ----------
 let settings = { deskUrl: '', token: '' };
@@ -207,8 +206,6 @@ function render() {
   $('main').hidden = !onSource || view !== 'main';
   $('settings').hidden = view !== 'settings';
   $('backBtn').hidden = view === 'main';
-  $('milestone').hidden = !onSource || !SOURCES[page.videoId];
-  $('milestone').textContent = SOURCES[page.videoId] || '';
   $('srcTitle').textContent = page.title || page.videoId || '';
   $('srcTime').textContent = fmt(page.t || 0);
 

@@ -1,4 +1,4 @@
-/* v11 — bump the number here and in panel.html together. kb design tokens — copied verbatim from ~/Code/brain/design-system/tokens.css */
+/* v12 — bump the number here and in panel.html together. kb design tokens — copied verbatim from ~/Code/brain/design-system/tokens.css */
 :root {
   --bg:        #faf8f4;
   --ink:       #1c1b18;
@@ -46,8 +46,7 @@ code { font: 0.88em var(--mono); background: var(--gold-soft); padding: 0.05em 0
 
 .side-head { display: flex; align-items: baseline; gap: 0.5rem; padding: 0.7rem 0.85rem 0.5rem; border-bottom: 1px solid var(--line); }
 .side-head .wordmark { font-weight: 600; font-size: var(--t-item); }
-.side-head .chip { margin-left: auto; }
-.iconbtn { color: var(--muted); display: inline-flex; align-items: center; margin-left: 0.4rem; }
+.iconbtn { color: var(--muted); display: inline-flex; align-items: center; margin-left: auto; }
 .iconbtn:hover { color: var(--ink); }
 .chip { font-size: var(--t-caption); color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 0.05rem 0.55rem; white-space: nowrap; }
 
