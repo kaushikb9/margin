@@ -1,4 +1,4 @@
-/* v10 — bump the number here and in panel.html together. kb design tokens — copied verbatim from ~/Code/brain/design-system/tokens.css */
+/* v11 — bump the number here and in panel.html together. kb design tokens — copied verbatim from ~/Code/brain/design-system/tokens.css */
 :root {
   --bg:        #faf8f4;
   --ink:       #1c1b18;
@@ -106,6 +106,7 @@ textarea.edit { width: 100%; resize: vertical; font: 400 var(--t-second)/1.5 var
 .acts .danger { color: var(--gold); font-weight: 600; text-decoration: none; }
 .reply .who b { color: var(--ink); font-weight: 600; }
 .reply.check .who b { color: var(--gold); }
+.reply .who .model { font: 11px var(--mono); color: var(--muted); opacity: 0.8; white-space: nowrap; }
 .reply .rtitle { font-size: var(--t-caption); color: var(--muted); font-weight: 600; }
 .reply .body { font-size: var(--t-second); line-height: 1.6; white-space: pre-wrap; }
 .reply .claim { font: 400 var(--t-second)/1.5 var(--serif); color: var(--muted); }

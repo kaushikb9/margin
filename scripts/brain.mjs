@@ -87,7 +87,7 @@ function replyHtml(r, n) {
   if (r.kind === 'widget') return `<div class="ta"><span class="who"><b>TA</b> built a widget here: ${esc(r.title)}</span></div>`;
   return '';
 }
-const cite = r => r.cites?.[0] ? ` · <a href="${yt(r.cites[0].t)}">${esc(fmt(r.cites[0].t))}</a>` : '';
+const cite = r => (r.cites?.[0] ? ` · <a href="${yt(r.cites[0].t)}">${esc(fmt(r.cites[0].t))}</a>` : '') + (r.model && r.model !== 'mock' ? ` <span class="model">${esc(r.model.replace(/^[^/]+\//, ''))}</span>` : '');
 const threadHtml = notes.map(n => `  <li>
     <span class="at"><a href="${yt(n.t)}">${esc(fmt(n.t))}</a></span>
     <p class="me">${esc(n.text)}</p>

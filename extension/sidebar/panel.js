@@ -296,6 +296,10 @@ function renderReply(n, r) {
   who.appendChild(el('span', 'avatar ta', 'TA'));
   who.appendChild(el('b', null, label));
   who.appendChild(document.createTextNode(` · ${ago(r.at)}`));
+  // Which model wrote it, without the vendor prefix: "glm-5.3-flash". Kept
+  // on every reply so a model swap later is visible in the record.
+  if (r.model && r.model !== 'mock') { const m = el('span', 'model', r.model.replace(/^[^/]+\//, '')); m.title = r.model; who.appendChild(m); }
+  else if (r.model === 'mock') who.appendChild(el('span', 'model', 'mock'));
   const at = citeLink(r.cites); if (at) who.appendChild(at);
   box.appendChild(who);
   if (r.title && r.kind !== 'check') box.appendChild(el('p', 'rtitle', r.title));
