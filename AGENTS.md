@@ -126,6 +126,9 @@ change: `TA_MODEL_COMPOSER`, `TA_MODEL_CHECKER`, `TA_MODEL_DEEPER`,
 4. For a permanent install: `npm run ext` (writes margin-extension.zip), sign the zip as **unlisted** on
    addons.mozilla.org (free, no listing), install the signed `.xpi`. Zen
    blocks unsigned add-ons and ignores `xpinstall.signatures.required`.
+   AMO rejects a manifest without `data_collection_permissions`; margin
+   declares `websiteActivity` (it reads which video you are on and sends
+   your notes to the desk you configured). Bump `version` for each upload.
 
 ## After a session
 
