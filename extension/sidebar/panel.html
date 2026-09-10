@@ -18,7 +18,7 @@
 
 <section id="offsource" class="empty" hidden>
   <p>Open a YouTube lecture in this window.</p>
-  <p class="caption">The panel follows the active tab.</p>
+  <p class="caption">The panel follows the active tab. If the lecture is already open and this still shows, reload that tab once: the page script only attaches to tabs loaded after margin was installed.</p>
 </section>
 
 <section id="nodesk" class="empty" hidden>
@@ -35,6 +35,7 @@
   </div>
 
   <div class="queue" id="queue"></div>
+  <p class="caption" id="mainStatus"></p>
 </main>
 
 <section id="break" hidden>

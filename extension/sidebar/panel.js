@@ -67,7 +67,11 @@ async function activeTab() {
   const tabs = await api.tabs.query({ active: true, currentWindow: true });
   return tabs[0] || null;
 }
+let lastMerge = 0;
 async function pollPage() {
+  // A fresh install, or a desk configured after the video loaded, must not
+  // sit on an empty queue: retry the merge every 15s until something lands.
+  if (haveDesk() && page.videoId && !session.notes.length && Date.now() - lastMerge > 15000) { lastMerge = Date.now(); mergeFromDesk(); }
   const tab = await activeTab();
   if (!tab) return setPage({ videoId: null });
   tabId = tab.id;
@@ -150,7 +154,7 @@ const repliesFor = id => session.replies.filter(r => r.noteId === id);
 const lastSubstantive = id => [...repliesFor(id)].reverse().find(r => ['answer', 'deeper', 'check'].includes(r.kind));
 
 // ---------- render ----------
-function status(msg) { const s = $('breakStatus'); if (s) s.textContent = msg; $('deskStatus').textContent = msg; }
+function status(msg) { for (const id of ['breakStatus', 'deskStatus', 'mainStatus']) { const e = $(id); if (e) e.textContent = msg; } }
 function render() {
   const onSource = Boolean(page.videoId);
   $('offsource').hidden = onSource || view === 'settings';
