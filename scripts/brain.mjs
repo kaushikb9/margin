@@ -212,7 +212,7 @@ const row = `<!-- margin:${videoId} -->
       <span class="day">${esc(dayShort(file.slice(0, 10)))}</span>
       <div>
         <a class="title" href="/posts/${clean}">${esc(title)}</a>
-        <div class="why">Karpathy's lecture with my notes in the margin: ${notes.length} notes${corrected ? `, ${corrected} of my own claims corrected` : ''}.</div>
+        <div class="why">${esc(src.by ? `${src.by.split(' ').at(-1)}'s lecture` : title)} with my notes in the margin: ${notes.length} notes${corrected ? `, ${corrected} of my own claims corrected` : ''}.</div>
       </div>
     </li>
     <!-- /margin -->`;

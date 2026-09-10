@@ -86,9 +86,12 @@ scripts/
   seed.mjs                    preload notes from seeds/<file>.json and let the TA respond (idempotent)
   export.mjs                  pull a session (notes + replies) from KV into sessions/
   notes.mjs                   render a session file into class notes (notes/<video>-<date>.html)
-tests/                        node --test; the contract test greps the renderer
+  brain.mjs                   `npm run brain <videoId>`: one post per video into ~/Code/brain (see below)
+functions/api/transcript.js   GET have-we-got-it · PUT the captions the page script fetched (lecture-only mode)
+tests/                        node --test; the contract test greps the renderer; brain-post.test.js runs brain.mjs against a copy of ~/Code/brain
 seeds/                        notes to preload, e.g. KB's tracker notes for the Deep Dive
-sessions/                     exported session logs — the input to the class-notes page
+sessions/                     exported session logs; <video>/summary.json caches the post's keep block
+docs/history/                 the brief, plan and mockups margin was built from (moved from ~/Code/learn)
 notes/                        rendered class notes (gitignored; the artifact is the copy)
 ```
 
@@ -97,13 +100,17 @@ notes/                        rendered class notes (gitignored; the artifact is 
 One writer per key.
 
 - `note:<videoId>:<noteId>` — written by the extension only:
-  `{id, src, t, text, tags[], createdAt, updatedAt}`. `t` is seconds into the
-  video when the note was jotted. Tags are `#word`, lowercase.
+  `{id, src, t, text, tags[], acks[], stars[], overruled, createdAt, updatedAt}`.
+  `t` is seconds into the video when the note was jotted. `tags` is `#doubt`
+  or empty. `stars` holds reply ids plus `'note'` for the note itself; the
+  brain post's keep block is written from them.
 - `reply:<videoId>:<noteId>:<seq>` — written by the desk only:
   `{id, noteId, src, seq, kind, at, model, ms, ...fields}` where `kind` is
   `answer | check | deeper | widget | error` and the fields are those in
   `desk/contract.js`. A check that finds nothing is **not stored** — absence
   is the only "fine".
+- `transcript:<videoId>` — written by the desk when the page script hands it
+  captions for a video the worker cannot fetch (lecture-only mode).
 - The extension also keeps everything in `browser.storage.local` under
   `s:<videoId>` so the panel renders offline; the desk is merged in on open.
 
@@ -189,22 +196,25 @@ page — the desk is a key-holder, a notebook and a sandbox, not a site.
 
 ## Deferred, don't build unless asked
 
-- Sources beyond the two Karpathy videos (Milestones 1–2). Adding one is
-  `scripts/transcript.mjs <id> <milestone>` plus brain notes; the panel and
-  desk need nothing.
+- Brain notes for sources beyond the two Karpathy videos (Milestones 1–2).
+  A new video already works in lecture-only mode (the page script fetches
+  its captions; answers come from the transcript, no notes). Adding notes is
+  `scripts/transcript.mjs <id> <milestone>` plus a `d<n>.json`.
 - A Chrome build. The manifest is MV3 and would mostly port, but
   `sidebar_action` is Firefox's.
-- Writing to the tracker artifact db from the extension. The clipboard
-  digest is the coupling.
+- Any coupling to the tracker (`~/Code/learn`). The tracker is the plan and
+  the score; margin is the notebook; the blog is the record.
+- A nightly job for the brain post. It is a command KB runs; decided
+  2026-09-10 after the review, and it stays that way until three posts
+  exist that were worth keeping.
+- Widget stills in the brain post. A line says a widget was built; the
+  live widget is in the sidebar. Never run model-written `compute` outside
+  the sandboxed runtime.
+- More widget work (renderers, prompts) until a real session asks "show me"
+  more than once.
 - A break view, "go deeper on all", an end-session button, tags, a "not
   convinced" button — all cut on 2026-09-10 as redundant with the thread
   model and the brain post. Chapter-end prompts, badges, sounds: never.
-- **Surfacing closed sessions in brain.kaushikbhat.com.** KB's parked todo
-  (2026-09-10): the brain repo restructured as plan (optional) → topic
-  (video/paper/essay) → session, with the notes page under it. Scope in
-  `docs/history/learn-app-plan.md` under "Todo".
-  Until then class notes are Claude artifacts only (`scripts/notes.mjs`),
-  and nothing is written into `~/Code/brain`.
 
 ## Learned the hard way
 

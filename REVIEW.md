@@ -227,3 +227,48 @@ Net: the sidebar's core (brain, jot, check, answer, thread) is right-sized
 and good. The widget layer and the nightly brain job are the two places
 the build ran ahead of the evidence. Neither needs deleting; both need to
 stop growing until a real week of lectures says otherwise.
+
+---
+
+# Second pass — 10 September, late
+
+After 18 commits (0.2.0 to 0.2.8). `./check.sh` 42 of 42, brain contract
+green. Production desk is at 0.2.0; the only desk-side change since is
+`sources.json`, which the post writer reads locally, so nothing live is
+behind in a way that matters.
+
+| Finding | Now |
+|---|---|
+| 1 · Verb, version, doc drift | **Closed.** |
+| 2 · Production commit not in history | **Superseded.** Production is now `ceb4ec7`, which is in the log. |
+| 3 · The brain seam | **Closed as recommended.** `brain.mjs` is a command; refuses localhost; refuses with nothing starred; dated to the first note and found by slug on reruns; index row between markers; no stills; runs the brain's check. `tests/brain-post.test.js` proves the refuse, the write and the idempotent rerun against a copy of the real brain. |
+| 4 · Small things | **Open, all three.** Forbidden-token list, DELETE pagination, three widget renderers. None bit. |
+| Audit · acks and the "awaiting you" count | **Half.** The footer count is gone. The 👍 button and the `open` styling on a collapsed line remain, so a reply still carries "you owe this". Either cut the button too or accept it as a reaction; the comment in `panel.js` already argues for the latter. |
+| Audit · widgets frozen | **Held.** No widget commits in the 18. |
+| Audit · nightly job replaced by a command | **Done.** |
+
+**New, fixed now**
+
+- `brain.mjs` hard-coded "Karpathy's lecture" into every index row, so the
+  first non-Karpathy video would have been filed under his name. It now
+  uses the source's `by`, falling back to the title.
+- `AGENTS.md` still said nothing is written into `~/Code/brain`, that the
+  clipboard digest couples to the tracker, and that class notes are
+  artifacts only. The layout table did not list `brain.mjs`,
+  `functions/api/transcript.js`, the brain-post test or `docs/history/`; the
+  KV section did not know `transcript:*`, `stars`, `acks`, `overruled`.
+  All corrected. The deferred list now carries the audit's decisions
+  (no job, no stills, no more widget work) so they cannot be re-litigated.
+
+**New, not changed**
+
+- The summariser runs `claude -p --model sonnet` on the laptop. The hard
+  boundary says "no Anthropic key"; this uses no key, but it does mean the
+  post writer depends on a logged-in CLI while the desk does not. Fine as a
+  laptop-only command; do not let it migrate into the desk.
+- `isQuestion` now lives in `panel.js` and again in `brain.mjs`. When it
+  changes, it changes twice. Worth lifting into `desk/contract.js` the next
+  time either is touched.
+- The first real session exported from production would be the first
+  evidence for the escalation rate and the composer's worth. Nothing to do
+  until then.
