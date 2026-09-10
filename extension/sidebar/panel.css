@@ -1,4 +1,4 @@
-/* v7 — bump the number here and in panel.html together. kb design tokens — copied verbatim from ~/Code/brain/design-system/tokens.css */
+/* v8 — bump the number here and in panel.html together. kb design tokens — copied verbatim from ~/Code/brain/design-system/tokens.css */
 :root {
   --bg:        #faf8f4;
   --ink:       #1c1b18;
@@ -66,8 +66,6 @@ main { flex: 1; overflow-y: auto; }
   font: 400 var(--t-second)/1.55 var(--serif); color: var(--ink);
   background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 0.5rem 0.6rem;
 }
-.composer .ask { display: flex; align-items: center; gap: 0.4rem; font-size: var(--t-caption); color: var(--muted); cursor: pointer; }
-.composer .ask input { accent-color: var(--gold); margin: 0; }
 
 /* queue — the shape of a comments panel: who, when, text, replies */
 .queue { display: flex; flex-direction: column; }
@@ -98,6 +96,9 @@ main { flex: 1; overflow-y: auto; }
 .reply .who .ack { font-size: var(--t-caption); color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 0 0.45rem; line-height: 1.5; }
 .reply .who .ack:hover { color: var(--ink); border-color: var(--ink); }
 .reply .who .ack.on { color: var(--muted); border-color: transparent; cursor: default; }
+.star { font-size: var(--t-second); color: var(--muted); line-height: 1; }
+.star:hover, .star.on { color: var(--gold); }
+.meta .star { margin-left: 0.2rem; }
 .reply .who b { color: var(--ink); font-weight: 600; }
 .reply.check .who b { color: var(--gold); }
 .reply .rtitle { font-size: var(--t-caption); color: var(--muted); font-weight: 600; }

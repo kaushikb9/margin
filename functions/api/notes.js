@@ -24,8 +24,8 @@ export async function onRequestPut({ request, env }) {
   if (typeof note.t !== 'number') return bad('note.t');
   const tags = Array.isArray(note.tags) ? note.tags.filter(t => typeof t === 'string' && /^#[a-z0-9_-]{1,24}$/i.test(t)).map(t => t.toLowerCase()) : [];
   const now = new Date().toISOString();
-  const acks = Array.isArray(note.acks) ? note.acks.filter(a => typeof a === 'string').slice(0, 200) : [];
-  const stored = { id: note.id, src: source, t: note.t, text: note.text.trim().slice(0, 4000), tags, acks, overruled: Boolean(note.overruled), createdAt: note.createdAt || now, updatedAt: now };
+  const ids = a => Array.isArray(a) ? a.filter(x => typeof x === 'string').slice(0, 200) : [];
+  const stored = { id: note.id, src: source, t: note.t, text: note.text.trim().slice(0, 4000), tags, acks: ids(note.acks), stars: ids(note.stars), overruled: Boolean(note.overruled), createdAt: note.createdAt || now, updatedAt: now };
   if (env.TA_KV) await env.TA_KV.put(noteKey(source, note.id), JSON.stringify(stored));
   return json({ note: stored, kv: Boolean(env.TA_KV) });
 }

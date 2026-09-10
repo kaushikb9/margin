@@ -102,7 +102,7 @@ async function mergeFromDesk() {
   try {
     const r = await desk(`/api/notes?source=${encodeURIComponent(page.videoId)}`);
     const byId = new Map(session.notes.map(n => [n.id, n]));
-    for (const n of r.notes || []) { const local = byId.get(n.id); if (!local) session.notes.push({ ...n, status: 'synced' }); else { local.acks = [...new Set([...(local.acks || []), ...(n.acks || [])])]; local.overruled = local.overruled || Boolean(n.overruled); } }
+    for (const n of r.notes || []) { const local = byId.get(n.id); if (!local) session.notes.push({ ...n, status: 'synced' }); else { local.acks = [...new Set([...(local.acks || []), ...(n.acks || [])])]; local.stars = [...new Set([...(local.stars || []), ...(n.stars || [])])]; local.overruled = local.overruled || Boolean(n.overruled); } }
     const seen = new Set(session.replies.map(x => x.id));
     for (const x of r.replies || []) if (!seen.has(x.id)) session.replies.push(x);
     session.notes.sort((a, b) => a.t - b.t || a.createdAt.localeCompare(b.createdAt));
@@ -111,7 +111,7 @@ async function mergeFromDesk() {
 }
 async function pushNote(n) {
   if (!haveDesk()) return;
-  try { await desk('/api/notes', { method: 'PUT', body: { source: page.videoId, note: { id: n.id, text: n.text, tags: n.tags, t: n.t, createdAt: n.createdAt, acks: n.acks || [], overruled: Boolean(n.overruled) } } }); n.status = 'synced'; }
+  try { await desk('/api/notes', { method: 'PUT', body: { source: page.videoId, note: { id: n.id, text: n.text, tags: n.tags, t: n.t, createdAt: n.createdAt, acks: n.acks || [], stars: n.stars || [], overruled: Boolean(n.overruled) } } }); n.status = 'synced'; }
   catch (e) { n.status = 'local'; status(`desk: ${e.message}`); }
   await saveSession();
 }
@@ -130,9 +130,14 @@ async function ask(mode, n, extra = {}) {
 }
 
 // ---------- notes ----------
-async function addNote(raw, ask) {
+// The note decides: a question is answered, a statement is checked. Stored
+// as the #doubt tag so the desk, the seed files and the brain post need no
+// new field. Want an answer to a statement? End it with a question mark.
+const QUESTION = /\?\s*$|^(how|why|what|when|where|which|who|is|are|does|do|did|can|could|would|should|will|isn'?t|aren'?t|doesn'?t|don'?t)\b/i;
+const isQuestion = text => QUESTION.test(text.trim());
+async function addNote(raw) {
   const text = raw.replace(/\s+/g, ' ').trim();
-  const tags = ask ? ['#doubt'] : [];
+  const tags = isQuestion(text) ? ['#doubt'] : [];
   const n = { id: uid(), t: page.t || 0, text, tags, createdAt: new Date().toISOString(), status: 'local' };
   session.notes.push(n); await saveSession(); render();
   await pushNote(n);
@@ -150,6 +155,13 @@ const repliesFor = id => session.replies.filter(r => r.noteId === id);
 const TA_KINDS = ['answer', 'deeper', 'check', 'widget'];
 const awaiting = n => repliesFor(n.id).filter(r => TA_KINDS.includes(r.kind) && !(n.acks || []).includes(r.id));
 async function ack(n, r) { n.acks = [...new Set([...(n.acks || []), r.id])]; await saveSession(); render(); await pushNote(n); }
+// A star is the bigger ack: on a reply it also acknowledges it. 'note' stars the note itself.
+async function star(n, id) {
+  const set = new Set(n.stars || []);
+  if (set.has(id)) set.delete(id); else { set.add(id); if (id !== 'note') n.acks = [...new Set([...(n.acks || []), id])]; }
+  n.stars = [...set]; await saveSession(); render(); await pushNote(n);
+}
+const starred = (n, id) => (n.stars || []).includes(id);
 const lastSubstantive = id => [...repliesFor(id)].reverse().find(r => ['answer', 'deeper', 'check'].includes(r.kind));
 
 // ---------- render ----------
@@ -184,6 +196,7 @@ function renderNote(n) {
   const row = el('div', 'jot');
   const meta = el('p', 'meta'); meta.appendChild(el('span', 'avatar', 'K')); meta.appendChild(el('b', null, 'Kaushik')); meta.appendChild(document.createTextNode(` · ${ago(n.createdAt)}`));
   if (open.has(n.id)) { const at = el('button', 'at', `at ${fmt(n.t)}`); at.title = 'Jump the lecture to this moment'; at.onclick = () => seek(n.t); meta.appendChild(at); }
+  const st = el('button', 'star' + (starred(n, 'note') ? ' on' : ''), starred(n, 'note') ? '★' : '☆'); st.title = 'Star: a thing to remember'; st.onclick = () => star(n, 'note'); meta.appendChild(st);
   row.appendChild(meta);
   const body = el('div');
   body.appendChild(el('p', 'txt', n.text));
@@ -247,6 +260,7 @@ function renderReply(n, r) {
     b.title = acked ? 'Acknowledged' : 'Nothing more needed on this';
     if (!acked) b.onclick = () => ack(n, r);
     who.appendChild(b);
+    const st = el('button', 'star' + (starred(n, r.id) ? ' on' : ''), starred(n, r.id) ? '★' : '☆'); st.title = 'Star: a thing to remember'; st.onclick = () => star(n, r.id); who.appendChild(st);
   }
 
   if (r.kind === 'answer' || r.kind === 'deeper') {
@@ -318,9 +332,8 @@ $('jot').addEventListener('keydown', e => {
   if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault();
     const v = $('jot').value.trim(); if (!v) return;
-    const ask = $('askTa').checked;
-    $('jot').value = ''; $('askTa').checked = false;   // resets: per note, never a mode
-    addNote(v, ask);
+    $('jot').value = '';
+    addNote(v);
   }
 });
 $('backBtn').onclick = () => { view = 'main'; render(); };
