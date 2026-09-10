@@ -1,4 +1,4 @@
-# TA — a study companion beside the lecture
+# margin — a study companion in the margin of the lecture
 
 **Run · verify · deploy**
 
@@ -9,14 +9,14 @@ npm run preview    # the sidebar as a plain page on :8790, driven by a shim (des
 npm run deploy     # only when KB asks
 ```
 
-TA is a Firefox sidebar that sits beside a YouTube lecture. KB jots notes as
+margin is a Firefox sidebar that sits beside a YouTube lecture. (Named 2026-09-10; was "ta". The assistant that replies is still called the TA; `TA_*` env names, `x-ta-token` and the `TA_KV` binding are unchanged.) KB jots notes as
 he watches; nothing interrupts. A note tagged `#doubt` gets an answer, every
 note gets checked against a **precomputed concept brain**, and each reply
 lands as one muted line under the note. A break is optional: a deeper pass
 over every note, and the building of any widget that was asked for.
 
 Built 2026-09-10 from `~/Code/learn/learn-app-plan.md` and the mockup at
-https://claude.ai/code/artifact/0aaa12e2-4d34-48f3-b630-37c859c4e73c. The
+https://claude.ai/code/artifact/0aaa12e2-4d34-48f3-b630-37c859c4e73c (titled "TA" — the name changed after). The
 brief that started it is `~/Code/learn/learn-app-requirements.md`.
 
 ## Hard boundaries
@@ -120,9 +120,9 @@ change: `TA_MODEL_COMPOSER`, `TA_MODEL_CHECKER`, `TA_MODEL_DEEPER`,
 1. `npm run dev` (or deploy), note the URL.
 2. Zen → `about:debugging#/runtime/this-firefox` → **Load Temporary Add-on**
    → pick `extension/manifest.json`. This resets on restart.
-3. Open the TA sidebar (View → Sidebar, or the toolbar button), press the
+3. Open the margin sidebar (View → Sidebar, or the toolbar button), press the
    gear, enter the desk URL and `TA_TOKEN`, **Test**, **Save**.
-4. For a permanent install: `npm run ext`, sign the zip as **unlisted** on
+4. For a permanent install: `npm run ext` (writes margin-extension.zip), sign the zip as **unlisted** on
    addons.mozilla.org (free, no listing), install the signed `.xpi`. Zen
    blocks unsigned add-ons and ignores `xpinstall.signatures.required`.
 
@@ -142,9 +142,9 @@ opens the lecture at that moment.
 
 ```sh
 npx wrangler kv namespace create TA_KV          # paste the id into wrangler.toml
-npx wrangler pages project create ta-kb
-npx wrangler pages secret put OPENROUTER_API_KEY --project-name ta-kb
-npx wrangler pages secret put TA_TOKEN --project-name ta-kb
+npx wrangler pages project create margin
+npx wrangler pages secret put OPENROUTER_API_KEY --project-name margin
+npx wrangler pages secret put TA_TOKEN --project-name margin
 npm run deploy
 ```
 

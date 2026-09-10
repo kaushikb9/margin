@@ -1,11 +1,11 @@
-name = "ta-kb"
+name = "margin"
 compatibility_date = "2026-08-01"
 pages_build_output_dir = "site"
 
 # Create with: npx wrangler kv namespace create TA_KV
 # then paste the id here. Secrets (never in this file):
-#   npx wrangler pages secret put OPENROUTER_API_KEY --project-name ta-kb
-#   npx wrangler pages secret put TA_TOKEN --project-name ta-kb
+#   npx wrangler pages secret put OPENROUTER_API_KEY --project-name margin
+#   npx wrangler pages secret put TA_TOKEN --project-name margin
 [[kv_namespaces]]
 binding = "TA_KV"
 id = "88a2548e6a804514a4912d2f8621e812"

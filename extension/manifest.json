@@ -1,11 +1,11 @@
 {
   "manifest_version": 3,
-  "name": "TA",
+  "name": "margin",
   "version": "0.1.0",
-  "description": "A study companion that sits beside the lecture. Jot as you go; the TA answers and checks under your notes.",
+  "description": "Sits in the margin of a lecture. Jot as you go; the TA answers and checks under your notes.",
   "browser_specific_settings": {
     "gecko": {
-      "id": "ta@kaushikbhat.com",
+      "id": "margin@kaushikbhat.com",
       "strict_min_version": "128.0"
     }
   },
@@ -18,7 +18,7 @@
     "tabs"
   ],
   "sidebar_action": {
-    "default_title": "TA",
+    "default_title": "margin",
     "default_panel": "sidebar/panel.html",
     "default_icon": "icons/ta.svg",
     "open_at_install": false
