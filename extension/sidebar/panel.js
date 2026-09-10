@@ -102,7 +102,7 @@ async function mergeFromDesk() {
   try {
     const r = await desk(`/api/notes?source=${encodeURIComponent(page.videoId)}`);
     const byId = new Map(session.notes.map(n => [n.id, n]));
-    for (const n of r.notes || []) if (!byId.has(n.id)) session.notes.push({ ...n, status: 'synced' });
+    for (const n of r.notes || []) { const local = byId.get(n.id); if (!local) session.notes.push({ ...n, status: 'synced' }); else { local.acks = [...new Set([...(local.acks || []), ...(n.acks || [])])]; local.overruled = local.overruled || Boolean(n.overruled); } }
     const seen = new Set(session.replies.map(x => x.id));
     for (const x of r.replies || []) if (!seen.has(x.id)) session.replies.push(x);
     session.notes.sort((a, b) => a.t - b.t || a.createdAt.localeCompare(b.createdAt));
@@ -111,7 +111,7 @@ async function mergeFromDesk() {
 }
 async function pushNote(n) {
   if (!haveDesk()) return;
-  try { await desk('/api/notes', { method: 'PUT', body: { source: page.videoId, note: { id: n.id, text: n.text, tags: n.tags, t: n.t, createdAt: n.createdAt } } }); n.status = 'synced'; }
+  try { await desk('/api/notes', { method: 'PUT', body: { source: page.videoId, note: { id: n.id, text: n.text, tags: n.tags, t: n.t, createdAt: n.createdAt, acks: n.acks || [], overruled: Boolean(n.overruled) } } }); n.status = 'synced'; }
   catch (e) { n.status = 'local'; status(`desk: ${e.message}`); }
   await saveSession();
 }
@@ -147,6 +147,9 @@ async function route(n) {
   else if (!has('check') && !has('answer')) await ask('check', n);
 }
 const repliesFor = id => session.replies.filter(r => r.noteId === id);
+const TA_KINDS = ['answer', 'deeper', 'check', 'widget'];
+const awaiting = n => repliesFor(n.id).filter(r => TA_KINDS.includes(r.kind) && !(n.acks || []).includes(r.id));
+async function ack(n, r) { n.acks = [...new Set([...(n.acks || []), r.id])]; await saveSession(); render(); await pushNote(n); }
 const lastSubstantive = id => [...repliesFor(id)].reverse().find(r => ['answer', 'deeper', 'check'].includes(r.kind));
 
 // ---------- render ----------
@@ -165,9 +168,9 @@ function render() {
   $('srcTime').textContent = fmt(page.t || 0);
 
   const notes = session.notes;
-  const answered = notes.filter(n => repliesFor(n.id).some(r => r.kind === 'answer' || r.kind === 'deeper')).length;
-  const checks = notes.filter(n => repliesFor(n.id).some(r => r.kind === 'check' && !n.overruled)).length;
-  $('count').textContent = notes.length ? `${notes.length} note${notes.length === 1 ? '' : 's'}${answered ? ` · ${answered} answered` : ''}${checks ? ` · ${checks} corrected` : ''}` : '';
+  // What still needs you: TA replies you have neither acked nor answered.
+  const open = notes.reduce((a, n) => a + awaiting(n).length, 0);
+  $('count').textContent = notes.length ? `${notes.length} note${notes.length === 1 ? '' : 's'}${open ? ` · ${open} awaiting you` : ''}` : '';
 
   if (view === 'main') renderQueue(notes);
 }
@@ -188,13 +191,13 @@ function renderNote(n) {
   if (n.pending) body.appendChild(el('p', 'pending', n.pending === 'answer' ? 'Answering…' : n.pending === 'check' ? 'Reading…' : n.pending === 'deeper' ? 'Thinking…' : 'Building…'));
   if (replies.length && !open.has(n.id)) {
     const last = replies[replies.length - 1];
-    const line = el('button', 'collapsed ' + (last.kind === 'check' ? 'check' : last.kind === 'error' ? 'error' : ''));
+    const line = el('button', 'collapsed' + (last.kind === 'error' ? ' error' : ''));
     // No status word: the title says it was answered, the gold says it was
     // corrected, and "N replies" says there is more.
-    if (last.kind === 'check') line.appendChild(el('b', null, (last.correction || '').split(/(?<=[.!?])\s/)[0].slice(0, 60) + '…'));
+    if (last.kind === 'check') line.appendChild(document.createTextNode((last.correction || '').split(/(?<=[.!?])\s/)[0].slice(0, 60) + '…'));
     else if (last.kind === 'error') line.appendChild(el('b', null, 'Could not answer'));
     else line.appendChild(document.createTextNode(last.title || (last.kind === 'you' ? 'You replied' : last.kind === 'widget' ? 'Built' : '')));
-    line.appendChild(el('span', 'n', `${replies.length} ${replies.length === 1 ? 'reply' : 'replies'}`));
+    line.appendChild(el('span', 'n' + (awaiting(n).length ? ' open' : ''), `${replies.length} ${replies.length === 1 ? 'reply' : 'replies'}`));
     line.onclick = () => { open.add(n.id); render(); };
     body.appendChild(line);
   } else if (replies.length) {
@@ -234,9 +237,17 @@ function renderReply(n, r) {
   const label = { you: 'Kaushik', answer: 'TA', deeper: 'TA · thought about it', check: 'TA · on what you wrote', widget: 'TA · built', error: 'TA' }[r.kind] || r.kind;
   who.appendChild(el('span', 'avatar ta', 'TA'));
   who.appendChild(el('b', null, label));
-  who.appendChild(document.createTextNode(` · ${ago(r.at)}${r.title ? ' · ' + r.title : ''}`));
+  who.appendChild(document.createTextNode(` · ${ago(r.at)}`));
   const at = citeLink(r.cites); if (at) who.appendChild(at);
   box.appendChild(who);
+  if (r.title && r.kind !== 'check') box.appendChild(el('p', 'rtitle', r.title));
+  if (TA_KINDS.includes(r.kind)) {
+    const acked = (n.acks || []).includes(r.id);
+    const b = el('button', 'ack' + (acked ? ' on' : ''), acked ? '👍 ok' : '👍');
+    b.title = acked ? 'Acknowledged' : 'Nothing more needed on this';
+    if (!acked) b.onclick = () => ack(n, r);
+    who.appendChild(b);
+  }
 
   if (r.kind === 'answer' || r.kind === 'deeper') {
     box.appendChild(el('p', 'body', r.body));

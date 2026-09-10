@@ -1,4 +1,4 @@
-/* v5 — bump the number here and in panel.html together. kb design tokens — copied verbatim from ~/Code/brain/design-system/tokens.css */
+/* v7 — bump the number here and in panel.html together. kb design tokens — copied verbatim from ~/Code/brain/design-system/tokens.css */
 :root {
   --bg:        #faf8f4;
   --ink:       #1c1b18;
@@ -84,18 +84,23 @@ main { flex: 1; overflow-y: auto; }
 
 /* collapsed reply lines and expanded threads */
 .collapsed { margin-top: 0.2rem; font-size: var(--t-caption); color: var(--muted); display: flex; gap: 0.5rem; align-items: baseline; text-align: left; }
-.collapsed .n { color: var(--gold); font-weight: 600; margin-left: auto; white-space: nowrap; }
+.collapsed .n { color: var(--muted); margin-left: auto; white-space: nowrap; }
+.collapsed .n.open { color: var(--gold); font-weight: 600; }
 .collapsed b { color: var(--ink); font-weight: 600; }
-.collapsed.check b { color: var(--gold); }
 .collapsed.error b { color: var(--muted); }
 .pending { margin-top: 0.35rem; font-size: var(--t-caption); color: var(--muted); }
 .reply { margin-top: 0.5rem; border-left: 2px solid var(--line); padding-left: 0.7rem; display: flex; flex-direction: column; gap: 0.4rem; }
 .reply.check { border-left-color: var(--gold); }
 .reply .who { font-size: var(--t-caption); color: var(--muted); display: flex; gap: 0.5rem; align-items: center; }
+.reply .who { flex-wrap: nowrap; white-space: nowrap; }
 .reply .who .at { margin-left: auto; color: var(--muted); text-decoration: underline; text-decoration-color: var(--line); font-variant-numeric: tabular-nums; }
 .reply .who .at:hover { color: var(--ink); }
+.reply .who .ack { font-size: var(--t-caption); color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 0 0.45rem; line-height: 1.5; }
+.reply .who .ack:hover { color: var(--ink); border-color: var(--ink); }
+.reply .who .ack.on { color: var(--muted); border-color: transparent; cursor: default; }
 .reply .who b { color: var(--ink); font-weight: 600; }
 .reply.check .who b { color: var(--gold); }
+.reply .rtitle { font-size: var(--t-caption); color: var(--muted); font-weight: 600; }
 .reply .body { font-size: var(--t-second); line-height: 1.6; white-space: pre-wrap; }
 .reply .claim { font: 400 var(--t-second)/1.5 var(--serif); color: var(--muted); }
 .reply .why { font-size: var(--t-caption); color: var(--muted); }
