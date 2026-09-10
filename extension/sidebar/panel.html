@@ -18,7 +18,13 @@
 
 <section id="offsource" class="empty" hidden>
   <p>Open a YouTube lecture in this window.</p>
-  <p class="caption">The panel follows the active tab. If the lecture is already open and this still shows, reload that tab once: the page script only attaches to tabs loaded after margin was installed.</p>
+  <p class="caption">The panel follows the active tab.</p>
+</section>
+
+<section id="noaccess" class="empty" hidden>
+  <p>margin needs access to youtube.com.</p>
+  <p class="caption">Firefox switches this off for installed add-ons. Allow it once and reload the lecture tab.</p>
+  <button type="button" id="grantAccess" class="primary">Allow on youtube.com</button>
 </section>
 
 <section id="nodesk" class="empty" hidden>
