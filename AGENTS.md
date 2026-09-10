@@ -235,6 +235,10 @@ page — the desk is a key-holder, a notebook and a sandbox, not a site.
   was never injected. `host_permissions` declares youtube.com so it appears
   under about:addons → Permissions, and the panel shows an *Allow on
   youtube.com* button (`permissions.request`) when access is missing.
+- **The first render must happen even when there is no video.** After the
+  poll was removed, `setPage` skipped rendering when the video was
+  "unchanged" — including null→null at startup, which left a blank panel on
+  any non-YouTube tab. `?v=none` on the preview shows that state.
 - **Do not poll the page.** A 2s poll re-rendered the queue and threw the
   cursor out of the reply box after two letters. The sidebar now asks the
   page which video is open on tab events only, asks for the time at the

@@ -15,7 +15,8 @@ const api = (typeof browser !== 'undefined' && browser?.tabs) ? browser
   : previewShim();
 function previewShim() {
   const mem = {}; const q = new URLSearchParams(location.search);
-  const state = { videoId: q.get('v') || '7xTGNNLPyMI', t: Number(q.get('t') || 5354), title: q.get('title') || 'Deep Dive into LLMs like ChatGPT', playing: true };
+  // ?v=none previews the no-video state.
+  const state = { videoId: q.get('v') === 'none' ? null : (q.get('v') || '7xTGNNLPyMI'), t: Number(q.get('t') || 5354), title: q.get('title') || 'Deep Dive into LLMs like ChatGPT', playing: true };
   document.documentElement.dataset.preview = '1';
   return {
     storage: { local: { get: async k => ({ [k]: mem[k] }), set: async o => Object.assign(mem, o) } },
@@ -89,10 +90,12 @@ async function currentTime() {
   try { const s = await api.tabs.sendMessage(tabId, { type: 'state' }); if (s && typeof s.t === 'number') { page.t = s.t; page.title = s.title || page.title; } } catch {}
   return page.t || 0;
 }
+let rendered = false;
 async function setPage(s) {
   const changed = s.videoId !== page.videoId;
   page = { ...page, ...s };
-  if (!changed) return;              // same video: nothing to redraw
+  if (!changed && rendered) return;  // same video: nothing to redraw
+  rendered = true;
   open = new Set(); drafts && Object.keys(drafts).forEach(k => delete drafts[k]);
   if (page.videoId) { await loadSession(page.videoId); mergeFromDesk(); }
   render();
