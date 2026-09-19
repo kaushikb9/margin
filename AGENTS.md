@@ -48,7 +48,7 @@ brief that started it and every mockup are in `docs/history/`.
 Inside this repo "the brain" is `site/brain/*.json`, the concept notes the
 TA answers from. Everywhere else on this machine "the brain" is
 `~/Code/brain`, KB's private blog. When this repo writes posts there, say
-"the blog" or "brain.kaushikbhat.com" in code and docs to keep them apart.
+"the blog" or "brain.kaushik.sh" in code and docs to keep them apart.
 
 ## Layout
 
