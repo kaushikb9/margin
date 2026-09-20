@@ -6,3 +6,6 @@ bench/
 .DS_Store
 notes/
 .dev.vars
+
+sessions/*
+!sessions/.gitkeep
