@@ -1,5 +1,10 @@
 # margin — a study companion in the margin of the lecture
 
+Public repo, personal tool: built for one person and one study plan, not
+packaged for others. The sidebar needs a running desk — `npm run dev` gives
+a mock one with no key; a real one is a Cloudflare Pages deploy plus an
+OpenRouter key in `.dev.vars`. Read on for how it works; expect no support.
+
 ## Run · verify · deploy
 
 ```sh
