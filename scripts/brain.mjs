@@ -203,7 +203,13 @@ if (!v('tokens') || !v('post')) { console.error('brain: could not read ?v= numbe
 const postsDir = join(BRAIN, 'site/posts');
 const existing = readdirSync(postsDir).find(f => f.endsWith(`-${slug}.html`));
 const file = existing || `${firstDate.slice(0, 10)}-${slug}.html`;
-writeFileSync(join(postsDir, file), html.replace('__TOKENS_V__', v('tokens')).replace('__POST_V__', v('post')));
+// KB's own answers from the learn tracker (~/Code/learn/brain_post.py) live in this
+// post between <!-- learn:answers --> markers. This script rewrites the whole file,
+// so carry that block over, or a rerun would silently delete them.
+let learnBlock = '';
+if (existing) learnBlock = (readFileSync(join(postsDir, existing), 'utf8').match(/<!-- learn:answers -->[\s\S]*?<!-- \/learn -->\n?/) || [''])[0];
+const withLearn = learnBlock ? html.replace('<footer>', learnBlock + '\n<footer>') : html;
+writeFileSync(join(postsDir, file), withLearn.replace('__TOKENS_V__', v('tokens')).replace('__POST_V__', v('post')));
 const clean = file.replace(/\.html$/, '');
 
 // ---- the index row, between markers, in the right month, newest first ----

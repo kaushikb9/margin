@@ -35,7 +35,10 @@ test('brain.mjs refuses a session with nothing starred, then writes a post that 
   assert.match(html, /class="star"/, 'starred lines carry a ★ in the thread');
   const index = readFileSync(join(dir, 'site/index.html'), 'utf8');
   assert.equal((index.match(/<!-- margin:7xTGNNLPyMI -->/g) || []).length, 1, 'one index row');
+  const block = '<!-- learn:answers -->\n<h2>In my own words</h2>\n<p>kept</p>\n<!-- /learn -->\n';
+  writeFileSync(join(dir, 'site/posts', mine), html.replace('<footer>', block + '\n<footer>'));
   const r3 = run(starred); assert.equal(r3.code, 0); assert.match(r3.out, /rewrote/);
+  assert.equal((readFileSync(join(dir, 'site/posts', mine), 'utf8').match(/<!-- learn:answers -->/g) || []).length, 1, 'a rerun keeps the learn answers block, once');
   assert.equal((readFileSync(join(dir, 'site/index.html'), 'utf8').match(/<!-- margin:7xTGNNLPyMI -->/g) || []).length, 1, 'rerun replaces the row, never duplicates');
   rmSync(dir, { recursive: true, force: true });
 });

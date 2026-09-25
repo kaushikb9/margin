@@ -179,7 +179,7 @@ model, and without a key to the starred lines verbatim, saying so. Below it the 
 thread, corrections on their gold rail, a ★ on every starred line. Nothing
 is repeated. **No stars, no post** — the script refuses (exit 3). Widgets are not rendered; a line says one was
 built. It reads the live desk only (refuses localhost), then runs the
-brain's own `npm test`. Committing and deploying the brain stay KB's. Not
+brain's own `npm test`. Committing and deploying the brain stay KB's. **A rerun keeps the `<!-- learn:answers -->` block** that `~/Code/learn/brain_post.py` writes into the same post (KB's own answers to the plan's questions); do not drop it. Not
 nightly: run it by hand until it has produced three posts worth keeping.
 
 `npm run export` and `npm run notes` still exist for a per-session artifact
