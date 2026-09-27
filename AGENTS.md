@@ -210,10 +210,10 @@ page — the desk is a key-holder, a notebook and a sandbox, not a site.
   (`PaCmpygFfXo`, "The spelled-out intro to language modeling"), chapters
   6:24–36:17, 50:14–1:00:50, 1:10:01–1:26:17 and 1:47:49–1:50:18; it also
   uses `kCc8FmEb1nY` 22:11–38:00 inside Milestone 1, so that video now
-  spans d1 and d2. Wanted when a margin session next runs:
-  `scripts/transcript.mjs PaCmpygFfXo d1` and its notes (characters and
-  bigrams, counts to probabilities, negative log likelihood, one-hot
-  selects a row, softmax). Until then KB can open it in lecture-only mode.
+  spans d1 and d2. Done 2026-09-27: its transcript
+  ships and d1 carries seven notes from it (bigram, count tensor, counts
+  to probabilities, broadcasting, negative log likelihood, smoothing,
+  one-hot) plus anchors on softmax and the training loop.
   3Blue1Brown is out of the plan; do not add sources for it.
 - A Chrome build. The manifest is MV3 and would mostly port, but
   `sidebar_action` is Firefox's.
