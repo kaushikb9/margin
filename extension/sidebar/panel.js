@@ -185,7 +185,7 @@ async function ask(mode, n, extra = {}, retried = false) {
 // The note decides: a question is answered, a statement is checked. Stored
 // as the #doubt tag so the desk, the seed files and the brain post need no
 // new field. Want an answer to a statement? End it with a question mark.
-const QUESTION = /\?\s*$|^(how|why|what|when|where|which|who|is|are|does|do|did|can|could|would|should|will|isn'?t|aren'?t|doesn'?t|don'?t)\b/i;
+const QUESTION = /\?\s*$|\b(didn'?t|don'?t|do not|did not) (understand|get)\b|\b(confused|lost me|unclear)\b|^(how|why|what|when|where|which|who|is|are|does|do|did|can|could|would|should|will|isn'?t|aren'?t|doesn'?t|don'?t)\b/i;
 const isQuestion = text => QUESTION.test(text.trim());
 async function addNote(raw) {
   const text = raw.replace(/\s+/g, ' ').trim();
@@ -203,6 +203,14 @@ async function route(n) {
   const has = k => repliesFor(n.id).some(r => r.kind === k);
   if (n.tags.includes('#doubt') && !has('answer')) await ask('answer', n);
   else if (!has('check') && !has('answer')) await ask('check', n);
+}
+// Try again drops the failed line first: a check that now passes stores
+// nothing, and a stale error left behind reads as the retry failing. It also
+// re-reads the note, so one saved before the question rule widened is answered.
+async function retry(n) {
+  session.replies = session.replies.filter(r => !(r.noteId === n.id && r.kind === 'error'));
+  if (isQuestion(n.text) && !n.tags.includes('#doubt')) { n.tags = [...n.tags, '#doubt']; await pushNote(n); }
+  await saveSession(); render(); await route(n);
 }
 const repliesFor = id => session.replies.filter(r => r.noteId === id);
 const TA_KINDS = ['answer', 'deeper', 'check', 'widget'];
@@ -368,7 +376,7 @@ function renderReply(n, r) {
     box.appendChild(renderWidget(r));
   } else if (r.kind === 'error') {
     box.appendChild(el('p', 'body', `Could not answer: ${r.error || 'unknown'}`));
-    const acts = el('div', 'acts'); const again = el('button', null, 'Try again'); again.onclick = () => route(n); acts.appendChild(again); box.appendChild(acts);
+    const acts = el('div', 'acts'); const again = el('button', null, 'Try again'); again.onclick = () => retry(n); acts.appendChild(again); box.appendChild(acts);
   }
   return box;
 }
