@@ -92,7 +92,7 @@ if (!summaryText) {
   // the summary through `claude -p`. No key involved. OpenRouter is the
   // fallback when the CLI is not on the path.
   const hasClaude = process.env.TA_MOCK !== '1' && spawnSync('which', ['claude']).status === 0;
-  const askClaude = (u) => { const r = spawnSync('claude', ['-p', '--model', 'sonnet', '--output-format', 'text'], { input: `${system}\n\n${u}`, encoding: 'utf8', timeout: 180000 }); if (r.status !== 0) throw new Error(`claude -p failed: ${(r.stderr || '').slice(0, 200)}`); return r.stdout; };
+  const askClaude = (u) => { const r = spawnSync('claude', ['-p', '--model', 'sonnet', '--effort', 'medium', '--output-format', 'text'], { input: `${system}\n\n${u}`, encoding: 'utf8', timeout: 180000 }); if (r.status !== 0) throw new Error(`claude -p failed: ${(r.stderr || '').slice(0, 200)}`); return r.stdout; };
   let key = process.env.OPENROUTER_API_KEY;
   if (!key) try { key = readFileSync(join(root, '.dev.vars'), 'utf8').match(/^OPENROUTER_API_KEY=(.+)$/m)?.[1]?.trim(); } catch { /* absent */ }
   if (hasClaude) {
