@@ -19,6 +19,16 @@
    "segments": 2955,
    "blurb": "A small GPT built from a blank file: bigram, attention, the transformer block, and training it on Shakespeare.",
    "by": "Andrej Karpathy"
+  },
+  {
+   "id": "PaCmpygFfXo",
+   "title": "The spelled-out intro to language modeling: building makemore",
+   "milestone": "d1",
+   "duration": 7064.1,
+   "chapters": 24,
+   "segments": 3332,
+   "blurb": "Names in, names out: a character bigram model built by counting, scored by negative log likelihood, then rebuilt as a one-layer neural net with one-hot inputs and softmax.",
+   "by": "Andrej Karpathy"
   }
  ]
 }

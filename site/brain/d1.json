@@ -269,6 +269,11 @@
           "src": "7xTGNNLPyMI",
           "t": 2176,
           "quote": "the loss is the number that you are watching"
+        },
+        {
+          "src": "PaCmpygFfXo",
+          "t": 5724,
+          "quote": "nudged in the opposite direction of the gradient"
         }
       ],
       "widgetHint": "loss-for-a-guess"
@@ -303,6 +308,11 @@
           "src": "kCc8FmEb1nY",
           "t": 1843,
           "quote": "that gives us the logits which we then convert to probabilities via softmax"
+        },
+        {
+          "src": "PaCmpygFfXo",
+          "t": 5246,
+          "quote": "Softmax is a very often used layer in a neural net"
         }
       ],
       "widgetHint": "logits-to-probabilities"
@@ -750,6 +760,250 @@
         }
       ],
       "widgetHint": "embedding-neighbours"
+    },
+    {
+      "id": "c-bigram-model",
+      "title": "Bigram model",
+      "aliases": [
+        "bigram",
+        "bigrams",
+        "two characters",
+        "character pairs",
+        "makemore"
+      ],
+      "prereqs": [
+        "c-next-token-prediction"
+      ],
+      "unlocks": [
+        "c-count-tensor"
+      ],
+      "oneLiner": "The simplest language model: look at one character, predict the next, forget everything earlier.",
+      "explanation": "Imagine a phone keyboard that only looks at the last letter you typed. You typed \"q\"; it suggests \"u\". You typed \"a\"; it has a spread of guesses. That is a bigram model: it works with two characters at a time, the one given and the one to predict, and ignores everything before. Karpathy builds it on a list of names, where each name is treated as a sequence of characters with a start and an end marker, so every name contributes pairs like (start, e), (e, m), (m, m), (m, a), (a, end). The model is nothing more than statistics over those pairs. It is weak, since \"emma\" and \"gemma\" look the same after the \"m\", but it has every part a real language model has: training data, a table of what follows what, probabilities, sampling and a loss. Later models only widen how far back they look.",
+      "wrongVersion": {
+        "claim": "A bigram model reads the whole name before guessing the next letter.",
+        "tell": "forgets that only the previous single character is used"
+      },
+      "anchors": [
+        {
+          "src": "PaCmpygFfXo",
+          "t": 351,
+          "quote": "in a bigram language model we're always working with just two characters at a time"
+        }
+      ],
+      "widgetHint": null
+    },
+    {
+      "id": "c-count-tensor",
+      "title": "The count tensor",
+      "aliases": [
+        "tensor",
+        "tensors",
+        "torch.tensor",
+        "2d array",
+        "counts matrix",
+        "N matrix",
+        "27 by 27",
+        "torch.zeros"
+      ],
+      "prereqs": [
+        "c-bigram-model"
+      ],
+      "unlocks": [
+        "c-counts-to-probabilities",
+        "c-broadcasting"
+      ],
+      "oneLiner": "A tensor is just an n-dimensional array; here a 27×27 grid where row = current character, column = next, cell = how often that pair appeared.",
+      "explanation": "A tensor is PyTorch's word for an array with any number of dimensions: a single number, a list, a grid, a stack of grids. At this point in the lecture it is a 2D grid, 27 by 27, with 26 letters plus the \".\" start/end token. Row index is the character you just typed, column index is the one that came next, and each cell counts how often that pair appeared in the names. Training, for now, is walking every name and doing N[row, col] += 1. Think of your phone keyboard keeping a tally: every time you typed \"t\" then \"h\", the t-row, h-column cell goes up by one. The dictionary version from a minute earlier held the same counts; the tensor is simply faster and lets you index by row and column. Read one row and you have everything the model knows about what follows that character.",
+      "wrongVersion": {
+        "claim": "A tensor is a special neural-network object with learned weights inside it.",
+        "tell": "confuses the container (an array) with what is stored in it"
+      },
+      "anchors": [
+        {
+          "src": "PaCmpygFfXo",
+          "t": 854,
+          "quote": "tensors allow us to really um manipulate all the individual entries and do it very efficiently"
+        }
+      ],
+      "widgetHint": "A 27×27 heatmap of bigram counts; hover a cell to see the pair and its count."
+    },
+    {
+      "id": "c-counts-to-probabilities",
+      "title": "Counts to probabilities, then sampling",
+      "aliases": [
+        "normalize",
+        "probability distribution",
+        "p.sum",
+        "torch.multinomial",
+        "sampling",
+        "generator"
+      ],
+      "prereqs": [
+        "c-count-tensor"
+      ],
+      "unlocks": [
+        "c-negative-log-likelihood"
+      ],
+      "oneLiner": "Divide each row of counts by its sum to get probabilities that add to one, then draw the next character from that row.",
+      "explanation": "Counts are not yet suggestions. To turn a row into a probability distribution, convert it to floats and divide by its sum; each entry is now a share, and the row adds up to one. Generating a name is then a loop: start at the \".\" row, draw a column at random in proportion to those probabilities with torch.multinomial, move to that character's row, and repeat until \".\" comes up again. The draw is random rather than always taking the top pick, which is why samples vary. Your keyboard shows the three highest-probability suggestions; a model that writes text draws one at random, weighted, so a rarer continuation sometimes wins. A fixed generator seed makes the draws repeatable, so your notebook and Karpathy's produce the same names.",
+      "wrongVersion": {
+        "claim": "Sampling always picks the most likely next character.",
+        "tell": "mistakes greedy argmax for a weighted random draw"
+      },
+      "anchors": [
+        {
+          "src": "PaCmpygFfXo",
+          "t": 1558,
+          "quote": "we're about to normalize these counts"
+        },
+        {
+          "src": "PaCmpygFfXo",
+          "t": 1596,
+          "quote": "you give me probabilities and I will give you integers"
+        }
+      ],
+      "widgetHint": null
+    },
+    {
+      "id": "c-broadcasting",
+      "title": "Broadcasting",
+      "aliases": [
+        "broadcast",
+        "broadcasting semantics",
+        "keepdim",
+        "sum dim 1",
+        "vectorized",
+        "P /= P.sum"
+      ],
+      "prereqs": [
+        "c-count-tensor"
+      ],
+      "unlocks": [],
+      "oneLiner": "When shapes differ, PyTorch stretches a size-1 dimension to match; P / P.sum(1, keepdim=True) divides every row by its own total.",
+      "explanation": "Normalising 27 rows one at a time is slow, so Karpathy does it in one line: P = N / N.sum(1, keepdim=True). The sum over dimension 1 gives each row's total, shaped 27×1. Dividing a 27×27 grid by a 27×1 column is allowed because of broadcasting: PyTorch copies the column across all 27 columns, so each row is divided by its own total. The trap is keepdim. Without it the sum has shape 27, which broadcasting treats as a row, 1×27, and you end up dividing each column by the wrong total. There is no error; the numbers are simply wrong. Think of a phone keyboard's tally table: you want each typed letter's row turned into percentages of that row's total, not the totals of some other letter. Check shapes aligned from the right, and check that each row sums to one.",
+      "wrongVersion": {
+        "claim": "keepdim=True is optional; the division comes out the same either way.",
+        "tell": "misses that a 27 vector broadcasts as a row and silently normalises columns"
+      },
+      "anchors": [
+        {
+          "src": "PaCmpygFfXo",
+          "t": 2244,
+          "quote": "something that's called broadcasting"
+        }
+      ],
+      "widgetHint": null
+    },
+    {
+      "id": "c-negative-log-likelihood",
+      "title": "Negative log likelihood (the loss)",
+      "aliases": [
+        "nll",
+        "loss",
+        "log likelihood",
+        "likelihood",
+        "maximum likelihood",
+        "average negative log likelihood",
+        "log prob"
+      ],
+      "prereqs": [
+        "c-counts-to-probabilities"
+      ],
+      "unlocks": [
+        "c-model-smoothing"
+      ],
+      "oneLiner": "Score a model by the probability it gave the characters that really came next: take logs, sum, negate, average. Lower is better; 0 is perfect.",
+      "explanation": "How good is the table? Walk through the training names and, for each real pair, look up the probability the model gave the character that actually came next. A good model gave high probabilities. The likelihood is the product of all of them, but multiplying thousands of numbers below one gives something vanishingly small, so we take logs: the log of a product is a sum, and log(1) = 0 while smaller probabilities give larger negative numbers. Negate that so it reads as a loss, where lower is better, and divide by the number of pairs to get an average. Karpathy's counted bigram model lands near 2.45. For your phone keyboard, this is the average surprise at what you actually typed next. Minimising this loss is the same as maximising likelihood, and it is the number the neural network later trains down.",
+      "wrongVersion": {
+        "claim": "A higher negative log likelihood means a better model.",
+        "tell": "forgets the negation makes it a loss, where lower is better and zero is perfect"
+      },
+      "anchors": [
+        {
+          "src": "PaCmpygFfXo",
+          "t": 3201,
+          "quote": "the likelihood is the product of all of these probabilities"
+        },
+        {
+          "src": "PaCmpygFfXo",
+          "t": 3411,
+          "quote": "negative log likelihood"
+        }
+      ],
+      "widgetHint": "Slider: probability assigned to the true next character, showing -log(p)."
+    },
+    {
+      "id": "c-model-smoothing",
+      "title": "Model smoothing",
+      "aliases": [
+        "smoothing",
+        "fake counts",
+        "add one",
+        "laplace",
+        "N+1",
+        "infinite loss",
+        "zero probability"
+      ],
+      "prereqs": [
+        "c-negative-log-likelihood"
+      ],
+      "unlocks": [],
+      "oneLiner": "Add a fake count to every cell so no pair has zero probability; a zero would make the loss infinite.",
+      "explanation": "If a pair never appears in the training names, like \"j\" followed by \"q\", its count is zero, its probability is zero, and the log of zero is minus infinity. One unseen pair in a test name makes the whole loss infinite. The fix is to add a fake count, say 1, to every cell before normalising. Now every continuation is possible, only unlikely. Add more and the rows flatten towards uniform; add a million and the model forgets what it learned. Your phone keyboard does the same: it still lets you type a word it has never seen and can suggest it back later, rather than refusing. In the neural network half, this same knob comes back as regularisation: pulling the weights towards zero pulls the probabilities towards uniform, which is smoothing by another name.",
+      "wrongVersion": {
+        "claim": "Smoothing makes the model more accurate on the training names.",
+        "tell": "misses that it trades a little training fit for never assigning zero"
+      },
+      "anchors": [
+        {
+          "src": "PaCmpygFfXo",
+          "t": 3710,
+          "quote": "we will add some fake counts"
+        },
+        {
+          "src": "PaCmpygFfXo",
+          "t": 6630,
+          "quote": "prevented us from assigning zero probability"
+        }
+      ],
+      "widgetHint": null
+    },
+    {
+      "id": "c-one-hot",
+      "title": "One-hot encoding",
+      "aliases": [
+        "one hot",
+        "one-hot",
+        "F.one_hot",
+        "xenc",
+        "encoding integers",
+        "plucks out a row"
+      ],
+      "prereqs": [
+        "c-bigram-model"
+      ],
+      "unlocks": [
+        "c-logits-softmax"
+      ],
+      "oneLiner": "Turn character index 13 into a vector of 27 zeros with a 1 at position 13; multiplied by W, it simply selects row 13.",
+      "explanation": "A neural network multiplies inputs by weights, so feeding it the raw number 13 would pretend character 13 is thirteen times character 1. Instead each character becomes a vector of 27 zeros with a single 1 at its index, via F.one_hot, then cast to float. Multiply that vector by the 27×27 weight matrix W and, because only one entry is non-zero, the result is exactly one row of W. So the network's output for \"e\" is just W's e-row, which is the neural version of looking up the e-row in the count table. That is why the two approaches converge to the same model. Picture your phone keyboard: the key you last typed switches on one line of a table, and that line holds the scores for every next letter it might suggest.",
+      "wrongVersion": {
+        "claim": "One-hot vectors add information the integer index did not have.",
+        "tell": "misses that it only makes a lookup expressible as matrix multiplication"
+      },
+      "anchors": [
+        {
+          "src": "PaCmpygFfXo",
+          "t": 4247,
+          "quote": "In one-hot encoding"
+        },
+        {
+          "src": "PaCmpygFfXo",
+          "t": 6480,
+          "quote": "multiplying that one-hot vector with W actually ends up plucking out the fifth"
+        }
+      ],
+      "widgetHint": null
     }
   ]
 }

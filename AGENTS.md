@@ -59,7 +59,7 @@ TA answers from. Everywhere else on this machine "the brain" is
 
 ```
 site/                         the desk's static half (Pages output dir)
-  brain/d1.json, d2.json      the concept brain: 36 notes, one cluster (phone keyboard)
+  brain/d1.json, d2.json      the concept brain: 43 notes, one cluster (phone keyboard)
   brain/sources.json          which videos are known
   transcripts/<videoId>.json  caption segments + chapters, fetched by scripts/transcript.mjs
   widget/runtime.html         the sandboxed widget runtime (lives here, not in the extension — see below)
