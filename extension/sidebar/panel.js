@@ -48,7 +48,7 @@ const store = {
   async set(k, v) { await api.storage.local.set({ [k]: v }); },
 };
 const sessionKey = src => `s:${src}`;
-async function loadSession(src) { session = await store.get(sessionKey(src), { notes: [], replies: [] }); }
+async function loadSession(src) { const s = await store.get(sessionKey(src), { notes: [], replies: [] }); if (page.videoId === src) session = s; }
 async function saveSession() { if (page.videoId) await store.set(sessionKey(page.videoId), session); }
 
 // ---------- desk ----------
@@ -97,7 +97,7 @@ async function setPage(s) {
   if (!changed && rendered) return;  // same video: nothing to redraw
   rendered = true;
   open = new Set(); drafts && Object.keys(drafts).forEach(k => delete drafts[k]);
-  if (page.videoId) { await loadSession(page.videoId); mergeFromDesk(); }
+  if (page.videoId) { const src = page.videoId; await loadSession(src); if (page.videoId !== src) return; mergeFromDesk(); }
   render();
 }
 async function seek(t) { if (tabId != null) try { await api.tabs.sendMessage(tabId, { type: 'seek', t }); } catch {} }
@@ -105,8 +105,12 @@ async function seek(t) { if (tabId != null) try { await api.tabs.sendMessage(tab
 // ---------- sync ----------
 async function mergeFromDesk() {
   if (!haveDesk() || !page.videoId) return;
+  const src = page.videoId, mine = session;
   try {
-    const r = await desk(`/api/notes?source=${encodeURIComponent(page.videoId)}`);
+    const r = await desk(`/api/notes?source=${encodeURIComponent(src)}`);
+    // The video can change while the desk answers: drop a reply for the old one,
+    // or its notes are merged into (and saved under) the new video.
+    if (page.videoId !== src || session !== mine) return;
     const byId = new Map(session.notes.map(n => [n.id, n]));
     for (const n of r.notes || []) { const local = byId.get(n.id); if (!local) session.notes.push({ ...n, status: 'synced' }); else { local.stars = [...new Set([...(local.stars || []), ...(n.stars || [])])]; local.overruled = local.overruled || Boolean(n.overruled); } }
     const seen = new Set(session.replies.map(x => x.id));
@@ -114,6 +118,33 @@ async function mergeFromDesk() {
     session.notes.sort((a, b) => a.t - b.t || a.createdAt.localeCompare(b.createdAt));
     await saveSession(); render();
   } catch (e) { status(`desk: ${e.message}`); }
+}
+// One-time repair (0.2.10): before the race guard above, a desk answer for the
+// previous video could land in the next video's session and be saved there.
+// Note ids are random, so an id in two sessions is a copy. The desk never got
+// the copies, so the desk's own list says which session each note belongs to.
+async function cleanupCrossVideoCopies() {
+  if (!haveDesk() || await store.get('cleanup:crossVideo', false)) return;
+  const all = await api.storage.local.get(null);
+  const where = new Map();                                   // note id → [video ids]
+  for (const [k, v] of Object.entries(all)) if (k.startsWith('s:')) for (const n of v.notes || []) where.set(n.id, [...(where.get(n.id) || []), k.slice(2)]);
+  const dupes = [...where].filter(([, srcs]) => srcs.length > 1);
+  const onDesk = {};
+  try { for (const src of new Set(dupes.flatMap(([, s]) => s))) onDesk[src] = new Set(((await desk(`/api/notes?source=${encodeURIComponent(src)}`)).notes || []).map(n => n.id)); }
+  catch { return; }                                          // desk down: try again next start
+  const drop = {};                                           // video id → note ids to remove
+  for (const [id, srcs] of dupes) {
+    const home = srcs.filter(src => onDesk[src].has(id));
+    if (!home.length) continue;                              // desk does not know: leave it
+    for (const src of srcs) if (!home.includes(src)) (drop[src] ||= new Set()).add(id);
+  }
+  for (const [src, ids] of Object.entries(drop)) {
+    const sess = all[sessionKey(src)];
+    sess.notes = sess.notes.filter(n => !ids.has(n.id));
+    sess.replies = (sess.replies || []).filter(x => !ids.has(x.noteId));
+    await store.set(sessionKey(src), sess);
+  }
+  await store.set('cleanup:crossVideo', true);
 }
 async function pushNote(n) {
   if (!haveDesk()) return;
@@ -410,6 +441,7 @@ $('grantAccess').onclick = async () => {
 (async () => {
   await loadSettings();
   await checkAccess();
+  await cleanupCrossVideoCopies();
   await refreshPage();
   api.tabs.onActivated?.addListener(refreshPage);
   api.tabs.onUpdated?.addListener((id, info) => { if (info.url || info.status === 'complete') refreshPage(); });
