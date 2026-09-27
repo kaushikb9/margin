@@ -14,7 +14,7 @@
     "bench": "node scripts/bench.mjs",
     "export": "node scripts/export.mjs",
     "ext": "cd extension && zip -qr ../margin-extension.zip . -x '.*' && echo wrote margin-extension.zip",
-    "deploy": "./check.sh && npx wrangler pages deploy site --project-name margin",
+    "deploy": "./deploy.sh",
     "preview": "python3 -m http.server 8790 --directory extension",
     "benchmarks": "node scripts/benchmarks.mjs",
     "notes": "node scripts/notes.mjs",
