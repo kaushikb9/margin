@@ -1,5 +1,4 @@
 .wrangler/
-.gstack/
 node_modules/
 margin-extension.zip
 bench/
