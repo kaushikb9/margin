@@ -29,7 +29,7 @@ test('brain.mjs refuses a session with nothing starred, then writes a post that 
   const mine = posts.find(p => p.includes('deep-dive-into-llms'));
   assert.ok(mine, 'post file written'); assert.match(mine, /^2026-09-10-/, 'dated to the first note');
   const html = readFileSync(join(dir, 'site/posts', mine), 'utf8');
-  assert.equal((html.match(/class="keep"/g) || []).length, 1); assert.doesNotMatch(html, /<script/);
+  assert.equal((html.match(/class="keep"/g) || []).length, 1); assert.deepEqual(html.match(/<script[^]*?<\/script>/g), ['<script src="/theme.js?v=1"></script>']);
   assert.ok(html.indexOf('class="keep"') < html.indexOf('<h2>In the margin'), 'the keep block sits above the thread');
   assert.doesNotMatch(html, /Key concepts/, 'no key-concepts list: the thread carries it');
   assert.match(html, /class="star"/, 'starred lines carry a ★ in the thread');

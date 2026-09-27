@@ -166,11 +166,14 @@ const html = `<!doctype html>
 <title>${esc(title)}</title>
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<meta name="theme-color" content="#1c1b18">
+<meta name="theme-color" content="#faf8f4" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#131210" media="(prefers-color-scheme: dark)">
+<script src="/theme.js?v=__THEME_V__"></script>
 <link rel="stylesheet" href="/tokens.css?v=__TOKENS_V__">
 <link rel="stylesheet" href="/post.css?v=__POST_V__">
 </head>
 <body class="post">
+<nav class="crumb"><a href="/" aria-label="All posts">brain<span class="dot">.</span></a></nav>
 
 <header>
   <div class="date">Last added ${esc(day(lastDate))} · from ${esc(day(firstDate))}</div>
@@ -209,7 +212,7 @@ const file = existing || `${firstDate.slice(0, 10)}-${slug}.html`;
 let learnBlock = '';
 if (existing) learnBlock = (readFileSync(join(postsDir, existing), 'utf8').match(/<!-- learn:answers -->[\s\S]*?<!-- \/learn -->\n?/) || [''])[0];
 const withLearn = learnBlock ? html.replace('<footer>', learnBlock + '\n<footer>') : html;
-writeFileSync(join(postsDir, file), withLearn.replace('__TOKENS_V__', v('tokens')).replace('__POST_V__', v('post')));
+writeFileSync(join(postsDir, file), withLearn.replace('__TOKENS_V__', v('tokens')).replace('__POST_V__', v('post')).replace('__THEME_V__', index.match(/theme\.js\?v=(\d+)/)?.[1] ?? '1'));
 const clean = file.replace(/\.html$/, '');
 
 // ---- the index row, between markers, in the right month, newest first ----
